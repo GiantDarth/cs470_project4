@@ -1,5 +1,6 @@
 import tkinter as tk
 import sys
+import time
 
 NORMAL_SQUARE_COLOR = '#FFFB33'
 AREA1_SQUARE_COLOR = '#F3BBF1'
@@ -10,6 +11,7 @@ OFFSET_X = 40
 OFFSET_Y = 30
 
 TILE_SIZE = 50
+
 
 class Board:
     def __init__(self, size, on_process_turn):
@@ -32,8 +34,10 @@ class Board:
         self._init_view()
 
     def _init_view(self):
-        self._canvas = tk.Canvas(self._view, bg="#477D92")
-        self._canvas.pack(fill=tk.BOTH, expand=1)
+        self._canvas = tk.Canvas(self._view, bg="#477D92",
+                                 width=OFFSET_X * 2 + TILE_SIZE * self._size,
+                                 height=OFFSET_Y * 2  +TILE_SIZE * self._size)
+        self._canvas.pack(expand=1)
 
         self._grid = [[None] * self._size] * self._size
         self._player1 = []
@@ -150,9 +154,12 @@ class Board:
 
 
 class Game:
-    def __init__(self, size):
+    def __init__(self, size, root):
         self._size = size
         self.status = [] # will be set to status widget when created
+
+        self._status_frame = tk.Frame()
+        self._status_frame.pack()
 
         self._board = Board(size, self._on_process_turn)
         self.player1 = self.zone1 = [[0, self._size - 1], [0, self._size - 2], [0, self._size - 3],
@@ -173,6 +180,31 @@ class Game:
         self._player_turn = 0
         self.turn_counter = 0
 
+        self._button_frame = tk.Frame()
+        self._button_frame.pack(fill=tk.BOTH, expand=1)
+        self._button_quit = tk.Button(self._button_frame, text="OKAY")
+        self._button_quit.pack()
+
+        self._turn_text = tk.StringVar()
+        self._turn_label = tk.Label(self._status_frame, textvariable=self._turn_text)
+        self._turn_label.pack()
+
+        self._turn_text.set("Turn {:d} - Player {:d}".format(self.turn_counter + 1, self._player_turn + 1))
+
+        self._timer_text = tk.StringVar()
+        self._timer_label = tk.Label(self._status_frame, textvariable=self._timer_text)
+        self._timer_label.pack()
+
+        self._root = root
+        self._start_time = time.time()
+        self._root.after(1000, self.timer)
+        self.time_limit = 120
+        self._pause = False
+
+        minutes, secs = divmod(self.time_limit, 60)
+        self._timer_text.set("{:02d}:{:02d}".format(minutes, secs))
+
+
     def _on_process_turn(self, event):
         # a way to figure out where should the piece be correctly placed at
         newX = (event.x - OFFSET_X) // TILE_SIZE
@@ -183,7 +215,17 @@ class Game:
         print(newX, newY)
         self.move(dragged_piece[1], [newX, newY])
         self._board.update(self.player1, self.player2)
-        self.winning()
+
+    def timer(self):
+        delta = time.time() - self._start_time
+        minutes, secs = divmod(round(self.time_limit - delta), 60)
+        self._timer_text.set("{:02d}:{:02d}".format(minutes, secs))
+
+        if delta >= self.time_limit:
+            print("Time ended: next turn.")
+            self.end_turn()
+        else:
+            self._root.after(1000, self.timer)
 
     def move(self, old, pos):
         # Not that player's turn
@@ -224,16 +266,24 @@ class Game:
             self._player_turn = 0
 
         self.turn_counter += 1
+        self._start_time = time.time()
 
-    def _add_reset_btn(self):
-        # create a restart button to restart the game
-        resetButton = tk.Button(text="RESTART", command=lambda: self.restart())
-        resetButton.grid(row=self.boardSize+2, columnspan=self.boardSize)
+        self._turn_text.set("Turn {:d} - Player {:d}".format(self.turn_counter + 1, self._player_turn + 1))
 
-    def _add_quit_btn(self):
-        # create a quit button to quit the game
-        quitButton = tk.Button(text="QUIT", command=lambda: self.quit())
-        quitButton.grid(row=self.boardSize+4, columnspan=self.boardSize)
+        if self.winning():
+            self._pause = True
+        else:
+            self._root.after(1000, self.timer)
+
+    # def _add_reset_btn(self):
+    #     # create a restart button to restart the game
+    #     resetButton = tk.Button(text="RESTART", command=lambda: self.restart())
+    #     resetButton.grid(row=self.boardSize+2, columnspan=self.boardSize)
+    #
+    # def _add_quit_btn(self):
+    #     # create a quit button to quit the game
+    #     quitButton = tk.Button(text="QUIT", command=lambda: self.quit())
+    #     quitButton.grid(row=self.boardSize+4, columnspan=self.boardSize)
 
     def restart(self):
         self._board = Board(size, self._on_process_turn)
@@ -253,6 +303,8 @@ if __name__ == "__main__":
 
     root = tk.Tk()
     root.wm_title("Halma {0:d} x {0:d}".format(size))
-    game = Game(size)
+    game = Game(size, root)
 
+    root.resizable(width=False, height=False)
+    root.update()
     root.mainloop()
