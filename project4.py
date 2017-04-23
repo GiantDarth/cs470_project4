@@ -2,15 +2,17 @@ import tkinter as tk
 import sys
 import time
 
-NORMAL_SQUARE_COLOR = '#FFFB33'
+LIGHT_SQUARE_COLOR = '#CCC'
+DARK_SQUARE_COLOR = "#222"
+
 AREA1_SQUARE_COLOR = '#F3BBF1'
 AREA2_SQUARE_COLOR = '#7CFC00'
-BLACK = "#000"
 
 OFFSET_X = 40
 OFFSET_Y = 30
 
-TILE_SIZE = 50
+TILE_SIZE = 45
+PIECE_SIZE_DIFF = 5
 
 
 class Board:
@@ -50,18 +52,18 @@ class Board:
                 fill = tag = ""
                 if x % 2 == 0:
                     if y % 2 == 0:
-                        fill = BLACK
-                        tag = "black"
+                        fill = DARK_SQUARE_COLOR
+                        tag = "dark"
                     else:
-                        fill = NORMAL_SQUARE_COLOR
-                        tag = "yellow"
+                        fill = LIGHT_SQUARE_COLOR
+                        tag = "light"
                 else:
                     if y % 2 == 0:
-                        fill = NORMAL_SQUARE_COLOR
-                        tag = "yellow"
+                        fill = LIGHT_SQUARE_COLOR
+                        tag = "light"
                     else:
-                        fill = BLACK
-                        tag = "black"
+                        fill = DARK_SQUARE_COLOR
+                        tag = "DARK_SQUARE_COLOR"
                 self._grid[x][y] = self._canvas.create_rectangle(x * TILE_SIZE + OFFSET_X, y * TILE_SIZE + OFFSET_Y,
                                                                  (x + 1) * TILE_SIZE + OFFSET_X, (y + 1) * TILE_SIZE + OFFSET_Y,
                                                                  outline="#fff", fill=fill, tags=tag)
@@ -95,10 +97,16 @@ class Board:
         for piece in self._player2_pieces:
             self._canvas.delete(piece)
 
-        self._player1_pieces = [self._canvas.create_oval(x * 50 + 45, y * 50 + 35, x * 50 + 85, y * 50 + 75, fill="#BB578F",
-                                                  tag=("piece", "player1")) for [x, y] in player1]
-        self._player2_pieces = [self._canvas.create_oval(x * 50 + 45, y * 50 + 35, x * 50 + 85, y * 50 + 75, fill="#B2D965",
-                                                  tag=("piece", "player1")) for [x, y] in player2]
+        self._player1_pieces = [self._canvas.create_oval(x * TILE_SIZE + OFFSET_X + PIECE_SIZE_DIFF,
+                                                         y * TILE_SIZE + OFFSET_Y + PIECE_SIZE_DIFF,
+                                                         (x + 1) * TILE_SIZE + OFFSET_X - PIECE_SIZE_DIFF,
+                                                         (y + 1) * TILE_SIZE + OFFSET_Y - PIECE_SIZE_DIFF,
+                                                         fill="#BB578F", tag=("piece", "player1")) for [x, y] in player1]
+        self._player2_pieces = [self._canvas.create_oval(x * TILE_SIZE + OFFSET_X + PIECE_SIZE_DIFF,
+                                                         y * TILE_SIZE + OFFSET_Y + PIECE_SIZE_DIFF,
+                                                         (x + 1) * TILE_SIZE + OFFSET_X - PIECE_SIZE_DIFF,
+                                                         (y + 1) * TILE_SIZE + OFFSET_Y - PIECE_SIZE_DIFF,
+                                                         fill="#B2D965", tag=("piece", "player2")) for [x, y] in player2]
 
     def get_dragged_piece(self):
         return self._dragged_piece
@@ -172,9 +180,6 @@ class Game:
                          [self._size - 2, 0], [self._size - 2, 1], [self._size - 2, 2],
                          [self._size - 3, 0], [self._size - 3, 1],
                          [self._size - 4, 0]]
-        self._board.update(self.player1, self.player2)
-
-        self.player1[0] = [5, 5]
         self._board.update(self.player1, self.player2)
 
         self._player_turn = 0
