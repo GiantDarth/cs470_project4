@@ -11,7 +11,8 @@ AREA2_SQUARE_COLOR = '#7CFC00'
 OFFSET_X = 40
 OFFSET_Y = 30
 
-TILE_SIZE = 50
+TILE_SIZE = 45
+PIECE_SIZE_DIFF = 5
 
 
 class Board:
@@ -96,10 +97,16 @@ class Board:
         for piece in self._player2_pieces:
             self._canvas.delete(piece)
 
-        self._player1_pieces = [self._canvas.create_oval(x * 50 + 45, y * 50 + 35, x * 50 + 85, y * 50 + 75, fill="#BB578F",
-                                                  tag=("piece", "player1")) for [x, y] in player1]
-        self._player2_pieces = [self._canvas.create_oval(x * 50 + 45, y * 50 + 35, x * 50 + 85, y * 50 + 75, fill="#B2D965",
-                                                  tag=("piece", "player1")) for [x, y] in player2]
+        self._player1_pieces = [self._canvas.create_oval(x * TILE_SIZE + OFFSET_X + PIECE_SIZE_DIFF,
+                                                         y * TILE_SIZE + OFFSET_Y + PIECE_SIZE_DIFF,
+                                                         (x + 1) * TILE_SIZE + OFFSET_X - PIECE_SIZE_DIFF,
+                                                         (y + 1) * TILE_SIZE + OFFSET_Y - PIECE_SIZE_DIFF,
+                                                         fill="#BB578F", tag=("piece", "player1")) for [x, y] in player1]
+        self._player2_pieces = [self._canvas.create_oval(x * TILE_SIZE + OFFSET_X + PIECE_SIZE_DIFF,
+                                                         y * TILE_SIZE + OFFSET_Y + PIECE_SIZE_DIFF,
+                                                         (x + 1) * TILE_SIZE + OFFSET_X - PIECE_SIZE_DIFF,
+                                                         (y + 1) * TILE_SIZE + OFFSET_Y - PIECE_SIZE_DIFF,
+                                                         fill="#B2D965", tag=("piece", "player2")) for [x, y] in player2]
 
     def get_dragged_piece(self):
         return self._dragged_piece
