@@ -1,11 +1,18 @@
 import tkinter as tk
+import sys
 
 NORMAL_SQUARE_COLOR = '#FFFB33'
 AREA1_SQUARE_COLOR = '#F3BBF1'
 AREA2_SQUARE_COLOR = '#7CFC00'
+BLACK = "#000"
+
+OFFSET_X = 40
+OFFSET_Y = 30
+
+TILE_SIZE = 50
 
 class Board:
-    def __init__(self, size):
+    def __init__(self, size, on_process_turn):
         self._view = tk.Frame()
         self._view.pack(fill=tk.BOTH, expand=1)
         self._size = size
@@ -21,6 +28,7 @@ class Board:
                          [self._size - 3, 0], [self._size - 3, 1],
                          [self._size - 4, 0]]
 
+        self._on_process_turn = on_process_turn
         self._init_view()
 
     def _init_view(self):
@@ -35,7 +43,6 @@ class Board:
 
         for x in range(self._size):
             for y in range(self._size):
-                BLACK = "#000"
                 fill = tag = ""
                 if x % 2 == 0:
                     if y % 2 == 0:
@@ -51,47 +58,29 @@ class Board:
                     else:
                         fill = BLACK
                         tag = "black"
-                self._grid[x][y] = self._canvas.create_rectangle(x * 50 + 40, y * 50 + 30, x * 50 + 90, y * 50 + 80, outline="#fff", fill=fill, tags=tag)
+                self._grid[x][y] = self._canvas.create_rectangle(x * TILE_SIZE + OFFSET_X, y * TILE_SIZE + OFFSET_Y,
+                                                                 (x + 1) * TILE_SIZE + OFFSET_X, (y + 1) * TILE_SIZE + OFFSET_Y,
+                                                                 outline="#fff", fill=fill, tags=tag)
 
         self._canvas.tag_bind("piece", "<ButtonPress-1>", self._onPressDown)
         self._canvas.tag_bind("piece", "<B1-Motion>", self._onMove)
-        self._canvas.tag_bind("piece", "<ButtonRelease-1>", self._onPressUp)
+        self._canvas.tag_bind("piece", "<ButtonRelease-1>", self._on_process_turn)
 
     def _onPressDown(self, event):
         piece = self._canvas.find_closest(event.x, event.y)
         while "piece" not in self._canvas.gettags(piece):
             piece = self._canvas.find_closest(event.x, event.y, start=piece)
-        self._dragged_piece = {"piece": piece, "x": event.x, "y": event.y}
-        self._current_drag_pos = [self._dragged_piece["x"], self._dragged_piece["y"]]
+
+        oldX = (event.x - OFFSET_X) // TILE_SIZE
+        oldY = (event.y - OFFSET_Y) // TILE_SIZE
+
+        self._dragged_piece = (piece, [oldX, oldY])
+        self._current_drag_pos = [event.x, event.y]
 
     def _onMove(self, event):
         delta = [event.x - self._current_drag_pos[0], event.y - self._current_drag_pos[1]]
-        self._canvas.move(self._dragged_piece["piece"], delta[0], delta[1])
+        self._canvas.move(self._dragged_piece[0], delta[0], delta[1])
         self._current_drag_pos = [event.x, event.y]
-
-    def _onPressUp(self, event):
-        # a way to figure out where should the piece be correctly placed at
-        newX = (event.x - 65) / 50
-        newY = (event.y - 55) / 50
-        if (newX - int(newX)) <= (int(newX)+1 - newX):
-            newX = int(newX)
-        elif (newX < 0):
-            newX = 0
-        elif (newX - int(newX)) > (int(newX)+1 - newX):
-            newX = int(newX) + 1
-        if (newY - int(newY)) <= (int(newY)+1 - newY):
-            newY = int(newY)
-        elif (newY < 0):
-            newY = 0
-        elif (newY - int(newY)) > (int(newY)+1 - newY):
-            newY = int(newY) + 1
-
-        if ([newX, newY] in self.findLegalMoves(self._player1) or
-        [newX, newY] in self.findLegalMoves(self._player2)):
-            # todo
-        else:
-            # todo
-        print(self.findLegalMoves(self._player1))
 
     def update(self, player1, player2):
         self._player1 = player1
@@ -106,6 +95,9 @@ class Board:
                                                   tag=("piece", "player1")) for [x, y] in player1]
         self._player2_pieces = [self._canvas.create_oval(x * 50 + 45, y * 50 + 35, x * 50 + 85, y * 50 + 75, fill="#B2D965",
                                                   tag=("piece", "player1")) for [x, y] in player2]
+
+    def get_dragged_piece(self):
+        return self._dragged_piece
 
     def _is_tile_empty(self, x, y):
         return [x, y] in self._player1 or [x, y] in self._player2
@@ -156,12 +148,13 @@ class Board:
                         not(current[0] == i and current[1] == j):
                     legalMoves.append([i, j])
 
+
 class Game:
     def __init__(self, size):
         self._size = size
         self.status = [] # will be set to status widget when created
 
-        self._board = Board(size)
+        self._board = Board(size, self._on_process_turn)
         self.player1 = self.zone1 = [[0, self._size - 1], [0, self._size - 2], [0, self._size - 3],
                          [0, self._size - 4],
                          [1, self._size - 1], [1, self._size - 2], [1, self._size - 3],
@@ -177,9 +170,60 @@ class Game:
         self.player1[0] = [5, 5]
         self._board.update(self.player1, self.player2)
 
+        self._player_turn = 0
+        self.turn_counter = 0
 
-        all(piece in self.zone2 for piece in self.player1)
-        all(piece in self.zone1 for piece in self.player2)
+    def _on_process_turn(self, event):
+        # a way to figure out where should the piece be correctly placed at
+        newX = (event.x - OFFSET_X) // TILE_SIZE
+        newY = (event.y - OFFSET_Y) // TILE_SIZE
+
+        dragged_piece = self._board.get_dragged_piece()
+
+        print(newX, newY)
+        self.move(dragged_piece[1], [newX, newY])
+        self._board.update(self.player1, self.player2)
+        self.winning()
+
+    def move(self, old, pos):
+        # Not that player's turn
+        if self._player_turn == 0:
+            if old in self.player2:
+                print(sys.stderr, "Not player 2's turn!")
+                return
+            elif old not in self.player1:
+                return
+            # elif pos not in self._board.findLegalMoves(self.player1):
+            #     print(sys.stderr, "Player 1: Illegal move.")
+            #     return
+            else:
+                self.player1.remove(old)
+                self.player1.append(pos)
+
+        elif self._player_turn == 1:
+            if old in self.player1:
+                print(sys.stderr, "Not player 1's turn!")
+                return
+            elif old not in self.player2:
+                return
+            # elif pos not in self._board.findLegalMoves(self.player2):
+            #     print(sys.stderr, "Player 2: Illegal move.")
+            #     return
+            else:
+                self.player2.remove(old)
+                self.player2.append(pos)
+
+        print("Turn {:d}: Player {:d} {}->{}".format(self.turn_counter, self._player_turn + 1, old, pos))
+
+        self.end_turn()
+
+    def end_turn(self):
+        if self._player_turn == 0:
+            self._player_turn = 1
+        elif self._player_turn == 1:
+            self._player_turn = 0
+
+        self.turn_counter += 1
 
     def _add_reset_btn(self):
         # create a restart button to restart the game
@@ -192,7 +236,7 @@ class Game:
         quitButton.grid(row=self.boardSize+4, columnspan=self.boardSize)
 
     def restart(self):
-        self._board = Board(size)
+        self._board = Board(size, self._on_process_turn)
 
     def winning(self):
         if all(piece in self.zone2 for piece in self.player1):
