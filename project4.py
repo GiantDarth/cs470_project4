@@ -14,12 +14,12 @@ class Board:
         self.status = []
 
     def _init_view(self):
-        self.winArea1 = [[0, self._size - 1], [0, self._size - 2], [0, self._size - 3],
+        self.player1 = self.zone1 = [[0, self._size - 1], [0, self._size - 2], [0, self._size - 3],
                          [0, self._size - 4],
                          [1, self._size - 1], [1, self._size - 2], [1, self._size - 3],
                          [2, self._size - 1], [2, self._size - 2],
                          [3, self._size - 1]]
-        self.winArea2 = [[self._size - 1, 0], [self._size - 1, 1], [self._size - 1, 2],
+        self.player2 = self.zone2 = [[self._size - 1, 0], [self._size - 1, 1], [self._size - 1, 2],
                          [self._size - 1, 3],
                          [self._size - 2, 0], [self._size - 2, 1], [self._size - 2, 2],
                          [self._size - 3, 0], [self._size - 3, 1],
@@ -53,9 +53,9 @@ class Board:
                         tag = "black"
                 self._grid[x][y] = canvas.create_rectangle(x * 50 + 40, y * 50 + 30, x * 50 + 90, y * 50 + 80, outline="#fff", fill=fill, tags=tag)
 
-                if [x, y] in self.winArea1:
+                if [x, y] in self.zone1:
                     self._pieces[x][y] = self._pieces[x][y] = canvas.create_oval(x * 50 + 45, y * 50 + 35, x * 50 + 85, y * 50 + 75, fill="#BB578F", tag="oval")
-                elif [x, y] in self.winArea2:
+                elif [x, y] in self.zone2:
                     self._pieces[x][y] = self._pieces[x][y] = canvas.create_oval(x * 50 + 45, y * 50 + 35, x * 50 + 85, y * 50 + 75, fill="#B2D965", tag="oval")
 
         canvas.pack(fill=tk.BOTH, expand=1)
@@ -131,10 +131,10 @@ class Game:
         pass
 
     def winning(self):
-        if pink wins TODO
-            displayStatus(mystatus, "Pink player wins!")
-        if green wins TODO
-            displayStatus(mystatus, "Eww gross...red pieces melding")
+        if all(piece in self.zone2 for piece in self.player1):
+            displayStatus(mystatus, "Pink player aka player 1 wins!")
+        if all(piece in self.zone1 for piece in self.player2):
+            displayStatus(mystatus, "Green player aka player 2 wins!")
     
     def displayStatus(alabel, msg):
         alabel.config(bg='yellow', fg='red', text=msg)
