@@ -4,28 +4,28 @@ NORMAL_SQUARE_COLOR = '#FFFB33'
 AREA1_SQUARE_COLOR = '#F3BBF1'
 AREA2_SQUARE_COLOR = '#7CFC00'
 
-class BoardView(tk.Frame):
-    def __init__(self, boardSize, master=None):
-        tk.Frame.__init__(self, master)
-        self.grid()
-        print("Made a new board")
-        self.boardGrid = []
-        self.status = [] # will be set to status widget when created
-        self.boardSize = boardSize
-        self.winArea1 = [[0, self.boardSize-1], [0, self.boardSize-2], [0, self.boardSize-3], [0, self.boardSize-4],
-                   [1, self.boardSize-1], [1, self.boardSize-2], [1, self.boardSize-3],
-                   [2, self.boardSize-1], [2, self.boardSize-2],
-                   [3, self.boardSize-1]]
-        self.winArea2 = [[self.boardSize-1, 0], [self.boardSize-1, 1], [self.boardSize-1, 2], [self.boardSize-1, 3],
-                    [self.boardSize-2, 0], [self.boardSize-2, 1], [self.boardSize-2, 2],
-                    [self.boardSize-3, 0], [self.boardSize-3, 1],
-                    [self.boardSize-4, 0]]
-        self.blankTile = tk.PhotoImage(file='')
-        self.redBall = tk.PhotoImage(file='redBall.png')
-        rball = self.redBall.subsample(2, 2)
-        self.blueBall = tk.PhotoImage(file='blueBall.png')
-        self.moving = False
-        self.createBoard()
+
+class Board:
+    def __init__(self, size):
+        self._view = tk.Frame()
+        self._view.pack()
+        self._size = size
+        self._init_view()
+
+    def _init_view(self,):
+        self._view.grid()
+        self.winArea1 = [[0, self._size - 1], [0, self._size - 2], [0, self._size - 3],
+                         [0, self._size - 4],
+                         [1, self._size - 1], [1, self._size - 2], [1, self._size - 3],
+                         [2, self._size - 1], [2, self._size - 2],
+                         [3, self._size - 1]]
+        self.winArea2 = [[self._size - 1, 0], [self._size - 1, 1], [self._size - 1, 2],
+                         [self._size - 1, 3],
+                         [self._size - 2, 0], [self._size - 2, 1], [self._size - 2, 2],
+                         [self._size - 3, 0], [self._size - 3, 1],
+                         [self._size - 4, 0]]
+
+        self._grid = self._init_grid()
 
     def createBoard(self):
         self.boardGrid.extend([[0]*self.boardSize]* self.boardSize)
@@ -41,6 +41,37 @@ class BoardView(tk.Frame):
                 self.boardGrid[x][y] = piece
                 piece.grid(row=x, column=y)
 
+        self._blank_tile = tk.PhotoImage(file='')
+        self._blue_ball = tk.PhotoImage(file='blueBall.png')
+        self._red_ball = tk.PhotoImage(file='redBall.png')
+
+        for x in range(self._size):
+            for y in range(self._size):
+                if [x, y] not in self.winArea1 and [x, y] not in self.winArea2:
+                    piece = tk.Button(bg=NORMAL_SQUARE_COLOR, width=40, height=40, text='empty', image=self._blank_tile,
+                                      borderwidth=5)
+                elif [x, y] in self.winArea1:
+                    piece = tk.Button(bg=AREA1_SQUARE_COLOR, width=40, height=40, text='blue', image=self._blue_ball,
+                                      borderwidth=5)
+                else:
+                    piece = tk.Button(bg=AREA2_SQUARE_COLOR, width=40, height=40, text='red', image=self._red_ball,
+                                      borderwidth=5)
+                grid[x][y] = piece
+                piece.grid(row=x, column=y)
+
+        return grid
+
+
+class Game:
+    def __init__(self, size, master=None):
+        self._size = size
+        self.status = [] # will be set to status widget when created
+
+        self._board = Board(size)
+
+        print("Hello world")
+
+    def _add_reset_btn(self):
         # create a restart button to restart the game
         resetButton = tk.Button(text="RESTART", command=lambda:self.restart())
         resetButton.grid(row=self.boardSize+2, columnspan=self.boardSize)
@@ -56,5 +87,11 @@ class BoardView(tk.Frame):
         #todo
         pass
 
-board=BoardView(8)
-board.mainloop()
+if __name__ == "__main__":
+    size = 8
+
+    root = tk.Tk()
+    root.wm_title("Halma {0:d} x {0:d}".format(size))
+    game = Game(size, root)
+
+    root.mainloop()
