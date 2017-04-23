@@ -2,10 +2,11 @@ import tkinter as tk
 import sys
 import time
 
-NORMAL_SQUARE_COLOR = '#FFFB33'
+LIGHT_SQUARE_COLOR = '#CCC'
+DARK_SQUARE_COLOR = "#222"
+
 AREA1_SQUARE_COLOR = '#F3BBF1'
 AREA2_SQUARE_COLOR = '#7CFC00'
-BLACK = "#000"
 
 OFFSET_X = 40
 OFFSET_Y = 30
@@ -50,18 +51,18 @@ class Board:
                 fill = tag = ""
                 if x % 2 == 0:
                     if y % 2 == 0:
-                        fill = BLACK
-                        tag = "black"
+                        fill = DARK_SQUARE_COLOR
+                        tag = "dark"
                     else:
-                        fill = NORMAL_SQUARE_COLOR
-                        tag = "yellow"
+                        fill = LIGHT_SQUARE_COLOR
+                        tag = "light"
                 else:
                     if y % 2 == 0:
-                        fill = NORMAL_SQUARE_COLOR
-                        tag = "yellow"
+                        fill = LIGHT_SQUARE_COLOR
+                        tag = "light"
                     else:
-                        fill = BLACK
-                        tag = "black"
+                        fill = DARK_SQUARE_COLOR
+                        tag = "DARK_SQUARE_COLOR"
                 self._grid[x][y] = self._canvas.create_rectangle(x * TILE_SIZE + OFFSET_X, y * TILE_SIZE + OFFSET_Y,
                                                                  (x + 1) * TILE_SIZE + OFFSET_X, (y + 1) * TILE_SIZE + OFFSET_Y,
                                                                  outline="#fff", fill=fill, tags=tag)
