@@ -8,12 +8,11 @@ AREA2_SQUARE_COLOR = '#7CFC00'
 class Board:
     def __init__(self, size):
         self._view = tk.Frame()
-        self._view.pack()
+        self._view.pack(fill=tk.BOTH, expand=1)
         self._size = size
         self._init_view()
 
     def _init_view(self):
-        self._view.grid()
         self.winArea1 = [[0, self._size - 1], [0, self._size - 2], [0, self._size - 3],
                          [0, self._size - 4],
                          [1, self._size - 1], [1, self._size - 2], [1, self._size - 3],
@@ -25,31 +24,40 @@ class Board:
                          [self._size - 3, 0], [self._size - 3, 1],
                          [self._size - 4, 0]]
 
-        self._blank_tile = tk.PhotoImage(file='')
-        self._blue_ball = tk.PhotoImage(file='blueBall.png')
-        self._red_ball = tk.PhotoImage(file='redBall.png')
+        canvas = tk.Canvas(self._view, bg="#477D92")
 
-        self._grid = self._init_grid()
-
-    def _init_grid(self):
-        grid = [[None] * self._size] * self._size
+        self._grid = [[None] * self._size] * self._size
+        self._pieces = [[None] * self._size] * self._size
 
         for x in range(self._size):
             for y in range(self._size):
-                if [x, y] not in self.winArea1 and [x, y] not in self.winArea2:
-                    piece = tk.Button(bg=NORMAL_SQUARE_COLOR, width=40, height=40, text='empty', image=self._blank_tile,
-                                      borderwidth=5)
-                elif [x, y] in self.winArea1:
-                    piece = tk.Button(bg=AREA1_SQUARE_COLOR, width=40, height=40, text='blue', image=self._blue_ball,
-                                      borderwidth=5)
+                # self._grid[x][y] = canvas.create_rectangle(x * 50 + 40, y * 50 + 30, x * 50 + 90, y * 50 + 80, outline="#fff",
+                #                                            fill="#477D92", tags="bg")
+
+                BLACK = "#000"
+                fill = tag = ""
+                if x % 2 == 0:
+                    if y % 2 == 0:
+                        fill = BLACK
+                        tag = "black"
+                    else:
+                        fill = NORMAL_SQUARE_COLOR
+                        tag = "yellow"
                 else:
-                    piece = tk.Button(bg=AREA2_SQUARE_COLOR, width=40, height=40, text='red', image=self._red_ball,
-                                      borderwidth=5)
-                grid[x][y] = piece
-                piece.grid(row=x, column=y)
+                    if y % 2 == 0:
+                        fill = NORMAL_SQUARE_COLOR
+                        tag = "yellow"
+                    else:
+                        fill = BLACK
+                        tag = "black"
+                self._grid[x][y] = canvas.create_rectangle(x * 50 + 40, y * 50 + 30, x * 50 + 90, y * 50 + 80, outline="#fff", fill=fill, tags=tag)
 
-        return grid
+                if [x, y] in self.winArea1:
+                    self._pieces[x][y] = self._pieces[x][y] = canvas.create_oval(x * 50 + 45, y * 50 + 35, x * 50 + 85, y * 50 + 75, fill="#BB578F", tag="oval")
+                elif [x, y] in self.winArea2:
+                    self._pieces[x][y] = self._pieces[x][y] = canvas.create_oval(x * 50 + 45, y * 50 + 35, x * 50 + 85, y * 50 + 75, fill="#B2D965", tag="oval")
 
+        canvas.pack(fill=tk.BOTH, expand=1)
 
 class Game:
     def __init__(self, size, master=None):
