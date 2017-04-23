@@ -61,9 +61,8 @@ class Board:
         piece = self._canvas.find_closest(event.x, event.y)
         while "piece" not in self._canvas.gettags(piece):
             piece = self._canvas.find_closest(event.x, event.y, start=piece)
-        self._dragged_piece = {"piece": piece, "x": event.x, "y": event.y }
+        self._dragged_piece = {"piece": piece, "x": event.x, "y": event.y}
         self._current_drag_pos = [self._dragged_piece["x"], self._dragged_piece["y"]]
-        print(event.x)
 
     def _onMove(self, event):
         delta = [event.x - self._current_drag_pos[0], event.y - self._current_drag_pos[1]]
@@ -71,8 +70,28 @@ class Board:
         self._current_drag_pos = [event.x, event.y]
 
     def _onPressUp(self, event):
-        self._dragged_piece = {}
-        self._current_drag_pos = []
+        # a way to figure out where should the piece be correctly placed at
+        newX = (event.x - 65) / 50
+        newY = (event.y - 55) / 50
+        if (newX - int(newX)) <= (int(newX)+1 - newX):
+            newX = int(newX)
+        elif (newX < 0):
+            newX = 0
+        elif (newX - int(newX)) > (int(newX)+1 - newX):
+            newX = int(newX) + 1
+        if (newY - int(newY)) <= (int(newY)+1 - newY):
+            newY = int(newY)
+        elif (newY < 0):
+            newY = 0
+        elif (newY - int(newY)) > (int(newY)+1 - newY):
+            newY = int(newY) + 1
+
+        if ([newX, newY] in self.findLegalMoves(self._player1) or
+        [newX, newY] in self.findLegalMoves(self._player2)):
+            # todo
+        else:
+            # todo
+        print(self.findLegalMoves(self._player1))
 
     def update(self, player1, player2):
         self._player1 = player1
@@ -92,7 +111,7 @@ class Board:
         return [x, y] in self._player1 or [x, y] in self._player2
 
     def findLegalMoves(self, player):
-        legalMoves = set()
+        legalMoves = []
 
         # first, we want to find all jump moves
         for i in range(self._size):
@@ -119,20 +138,23 @@ class Board:
         if transit[0] < 0 or transit[0] >= self._size or transit[1] < 0 or transit[1] >= self._size:
             return
 
+        if (self._is_tile_empty(transit[0], transit[1])):
+            return
+
         for i in range(transit[0] - 1, transit[0] + 2):
             for j in range(transit[1] - 1, transit[1] + 2):
                 if ((i - transit[0]) == (transit[0] - current[0]) and
                             (j - transit[1]) == (transit[1] - current[1]) and
                         (not (i == current[0] and j == current[1]))):
                     if self._is_tile_empty(i, j):
-                        legalMoves.add([i, j])
+                        legalMoves.append([i, j])
 
     def findRegularMove(self, current, legalMoves):
         for i in range(current[0] - 1, current[0] + 2):
             for j in range(current[1] - 1, current[1] + 2):
                 if self._is_tile_empty(i, j) and 0 <= i < self._size and 0 <= j < self._size and \
                         not(current[0] == i and current[1] == j):
-                    legalMoves.add([i, j])
+                    legalMoves.append([i, j])
 
 class Game:
     def __init__(self, size):
@@ -171,10 +193,6 @@ class Game:
 
     def restart(self):
         self._board = Board(size)
-
-    def move(self):
-        #todo
-        pass
 
     def winning(self):
         if all(piece in self.zone2 for piece in self.player1):
