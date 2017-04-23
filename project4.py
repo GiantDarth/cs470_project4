@@ -11,6 +11,7 @@ class Board:
         self._view.pack(fill=tk.BOTH, expand=1)
         self._size = size
         self._init_view()
+        self.status = []
 
     def _init_view(self):
         self.winArea1 = [[0, self._size - 1], [0, self._size - 2], [0, self._size - 3],
@@ -128,6 +129,16 @@ class Game:
     def move(self):
         #todo
         pass
+
+    def winning(self):
+        if pink wins TODO
+            displayStatus(mystatus, "Pink player wins!")
+        if green wins TODO
+            displayStatus(mystatus, "Eww gross...red pieces melding")
+    
+    def displayStatus(alabel, msg):
+        alabel.config(bg='yellow', fg='red', text=msg)
+        alabel.after(3000, lambda: theButton.config(image=newImage, text=newText))
 
 if __name__ == "__main__":
     size = 8
