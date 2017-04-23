@@ -240,9 +240,9 @@ class Game:
 
     def winning(self):
         if all(piece in self.zone2 for piece in self.player1):
-            displayStatus(mystatus, "Pink player aka player 1 wins!")
+            self.displayStatus(mystatus, "Pink player aka player 1 wins!")
         if all(piece in self.zone1 for piece in self.player2):
-            displayStatus(mystatus, "Green player aka player 2 wins!")
+            self.displayStatus(mystatus, "Green player aka player 2 wins!")
     
     def displayStatus(alabel, msg):
         alabel.config(bg='yellow', fg='red', text=msg)
