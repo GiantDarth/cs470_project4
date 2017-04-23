@@ -182,9 +182,6 @@ class Game:
                          [self._size - 4, 0]]
         self._board.update(self.player1, self.player2)
 
-        self.player1[0] = [5, 5]
-        self._board.update(self.player1, self.player2)
-
         self._player_turn = 0
         self.turn_counter = 0
 
