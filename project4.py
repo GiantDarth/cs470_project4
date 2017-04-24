@@ -393,28 +393,28 @@ class Game:
         # Not that player's turn
         if self._player_turn == 0:
             if old in self.player2:
-                print(sys.stderr, "Not Green player's turn!")
+                print("Not Green player's turn!", file=sys.stderr)
                 return
             elif old not in self.player1:
                 return
             elif old == pos:
                 return
             elif pos not in self._board.findLegalMoves(old):
-                print(sys.stderr, "Red Player: Illegal move.")
+                print("Red Player: Illegal move.", sys.stderr)
                 return
             else:
                 self.player1.remove(old)
                 self.player1.append(pos)
         elif self._player_turn == 1:
             if old in self.player1:
-                print(sys.stderr, "Not Red player's turn!")
+                print("Not Red player's turn!", file=sys.stderr)
                 return
             elif old not in self.player2:
                 return
             elif old == pos:
                 return
             elif pos not in self._board.findLegalMoves(old):
-                print(sys.stderr, "Green Player: Illegal move.")
+                print("Green Player: Illegal move.", sys.stderr)
                 return
             else:
                 self.player2.remove(old)
