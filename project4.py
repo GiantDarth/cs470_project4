@@ -385,7 +385,7 @@ class Game:
         if delta >= self.time_limit:
             print("Time ended: next turn.")
             self.end_turn()
-        elif self._pause:
+        elif not self._pause:
             self._root.after(1000, self.timer)
 
     def move(self, old, pos):
