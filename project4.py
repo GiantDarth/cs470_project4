@@ -400,7 +400,7 @@ class Game:
             elif old == pos:
                 return
             elif pos not in self._board.findLegalMoves(old):
-                print(sys.stderr, "Player 1: Illegal move.")
+                print(sys.stderr, "Red Player: Illegal move.")
                 return
             else:
                 self.player1.remove(old)
@@ -414,7 +414,7 @@ class Game:
             elif old == pos:
                 return
             elif pos not in self._board.findLegalMoves(old):
-                print(sys.stderr, "Player 2: Illegal move.")
+                print(sys.stderr, "Green Player: Illegal move.")
                 return
             else:
                 self.player2.remove(old)
