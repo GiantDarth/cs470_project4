@@ -37,7 +37,7 @@ class Board:
     def _init_view(self):
         self._canvas = tk.Canvas(self._view, bg="#477D92",
                                  width=OFFSET_X * 2 + TILE_SIZE * self._size,
-                                 height=OFFSET_Y * 2  +TILE_SIZE * self._size)
+                                 height=OFFSET_Y * 2 + TILE_SIZE * self._size)
         self._canvas.pack(expand=1)
 
         self._grid = [[None] * self._size] * self._size
