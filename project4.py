@@ -394,8 +394,8 @@ class Game:
         # Not that player's turn
         if self._player_turn == 0:
             if old in self.player2:
-                print("Not Green player's turn!", file=sys.stderr)
-                self._input_label.config(text="Not Green player's turn!")
+                print("Not your  turn, Red player's turn!", file=sys.stderr)
+                self._input_label.config(text="Not your turn, Red player's turn!")
                 self._input_label.after(error_delay, self._clear_input_label)
                 return
             elif old not in self.player1:
@@ -412,8 +412,8 @@ class Game:
                 self.player1.append(pos)
         elif self._player_turn == 1:
             if old in self.player1:
-                print("Not Red player's turn!", file=sys.stderr)
-                self._input_label.config(text="Not Green player's turn!")
+                print("Not your turn, Green player's turn!", file=sys.stderr)
+                self._input_label.config(text="Not your turn, Green player's turn!")
                 self._input_label.after(error_delay, self._clear_input_label)
                 return
             elif old not in self.player2:
