@@ -104,30 +104,28 @@ class Board:
     def get_dragged_piece(self):
         return self._dragged_piece
 
-    def _is_tile_empty(self, x, y):
+    def _is_not_tile_empty(self, x, y):
         return (x, y) in self._player1 or (x, y) in self._player2
 
-    def findLegalMoves(self, player):
+    def findLegalMoves(self, piece):
         legalMoves = []
 
+        i = piece[0]
+        j = piece[1]
         # first, we want to find all jump moves
-        for i in range(self._size):
-            for j in range(self._size):
-                if self._is_tile_empty(i, j):
-                    self.findJump((i, j), (i, j - 1), legalMoves)
-                    self.findJump((i, j), (i, j + 1), legalMoves)
-                    self.findJump((i, j), (i - 1, j), legalMoves)
-                    self.findJump((i, j), (i - 1, j - 1), legalMoves)
-                    self.findJump((i, j), (i - 1, j + 1), legalMoves)
-                    self.findJump((i, j), (i + 1, j), legalMoves)
-                    self.findJump((i, j), (i + 1, j - 1), legalMoves)
-                    self.findJump((i, j), (i + 1, j + 1), legalMoves)
+        if self._is_not_tile_empty(i, j):
+            self.findJump((i, j), (i, j - 1), legalMoves)
+            self.findJump((i, j), (i, j + 1), legalMoves)
+            self.findJump((i, j), (i - 1, j), legalMoves)
+            self.findJump((i, j), (i - 1, j - 1), legalMoves)
+            self.findJump((i, j), (i - 1, j + 1), legalMoves)
+            self.findJump((i, j), (i + 1, j), legalMoves)
+            self.findJump((i, j), (i + 1, j - 1), legalMoves)
+            self.findJump((i, j), (i + 1, j + 1), legalMoves)
 
         # Find regular moves
-        for i in range(self._size):
-            for j in range(self._size):
-                if self._is_tile_empty(i, j):
-                    self.findRegularMove((i, j), legalMoves)
+        if self._is_not_tile_empty(i, j):
+            self.findRegularMove((i, j), legalMoves)
 
         return legalMoves
 
@@ -135,7 +133,7 @@ class Board:
         if transit[0] < 0 or transit[0] >= self._size or transit[1] < 0 or transit[1] >= self._size:
             return
 
-        if (self._is_tile_empty(transit[0], transit[1])):
+        if (not self._is_not_tile_empty(transit[0], transit[1])):
             return
 
         for i in range(transit[0] - 1, transit[0] + 2):
@@ -143,13 +141,13 @@ class Board:
                 if ((i - transit[0]) == (transit[0] - current[0]) and
                             (j - transit[1]) == (transit[1] - current[1]) and
                         (not (i == current[0] and j == current[1]))):
-                    if self._is_tile_empty(i, j):
+                    if (not self._is_not_tile_empty(i, j) and i >= 0 and j >= 0):
                         legalMoves.append((i, j))
 
     def findRegularMove(self, current, legalMoves):
         for i in range(current[0] - 1, current[0] + 2):
             for j in range(current[1] - 1, current[1] + 2):
-                if self._is_tile_empty(i, j) and 0 <= i < self._size and 0 <= j < self._size and \
+                if (not self._is_not_tile_empty(i, j)) and 0 <= i < self._size and 0 <= j < self._size and \
                         not(current[0] == i and current[1] == j):
                     legalMoves.append((i, j))
 
@@ -246,7 +244,6 @@ class Game:
 
         dragged_piece = self._board.get_dragged_piece()
 
-        print(newX, newY)
         self.move(dragged_piece[1], (newX, newY))
         self._board.update(self.player1, self.player2)
 
@@ -262,6 +259,7 @@ class Game:
             self._root.after(1000, self.timer)
 
     def move(self, old, pos):
+        print(self._board.findLegalMoves(old))
         # Not that player's turn
         if self._player_turn == 0:
             if old in self.player2:
@@ -272,7 +270,7 @@ class Game:
             # elif pos not in self._board.findLegalMoves(self.player1):
             #     print(sys.stderr, "Player 1: Illegal move.")
             #     return
-            else:
+            elif pos in self._board.findLegalMoves(old):
                 self.player1.remove(old)
                 self.player1.append(pos)
 
@@ -285,7 +283,7 @@ class Game:
             # elif pos not in self._board.findLegalMoves(self.player2):
             #     print(sys.stderr, "Player 2: Illegal move.")
             #     return
-            else:
+            elif pos in self._board.findLegalMoves(old):
                 self.player2.remove(old)
                 self.player2.append(pos)
 
