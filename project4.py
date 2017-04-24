@@ -14,23 +14,16 @@ OFFSET_Y = 30
 TILE_SIZE = 45
 PIECE_SIZE_DIFF = 5
 
+NUM_PIECES = {"8": 10, "10": 15, "16": 19}
 
 class Board:
-    def __init__(self, size, on_process_turn):
+    def __init__(self, size, zone1, zone2, on_process_turn):
         self._view = tk.Frame()
         self._view.pack(fill=tk.BOTH, expand=1)
         self._size = size
 
-        self._zone1 = [[0, self._size - 1], [0, self._size - 2], [0, self._size - 3],
-                         [0, self._size - 4],
-                         [1, self._size - 1], [1, self._size - 2], [1, self._size - 3],
-                         [2, self._size - 1], [2, self._size - 2],
-                         [3, self._size - 1]]
-        self._zone2 = [[self._size - 1, 0], [self._size - 1, 1], [self._size - 1, 2],
-                         [self._size - 1, 3],
-                         [self._size - 2, 0], [self._size - 2, 1], [self._size - 2, 2],
-                         [self._size - 3, 0], [self._size - 3, 1],
-                         [self._size - 4, 0]]
+        self._zone1 = zone1[:]
+        self._zone2 = zone2[:]
 
         self._on_process_turn = on_process_turn
         self._init_view()
@@ -169,17 +162,14 @@ class Game:
         self._status_frame = tk.Frame()
         self._status_frame.pack()
 
-        self._board = Board(size, self._on_process_turn)
-        self.player1 = self.zone1 = [[0, self._size - 1], [0, self._size - 2], [0, self._size - 3],
-                         [0, self._size - 4],
-                         [1, self._size - 1], [1, self._size - 2], [1, self._size - 3],
-                         [2, self._size - 1], [2, self._size - 2],
-                         [3, self._size - 1]]
-        self.player2 = self.zone2 = [[self._size - 1, 0], [self._size - 1, 1], [self._size - 1, 2],
-                         [self._size - 1, 3],
-                         [self._size - 2, 0], [self._size - 2, 1], [self._size - 2, 2],
-                         [self._size - 3, 0], [self._size - 3, 1],
-                         [self._size - 4, 0]]
+        self.zone1 = self._get_zone("SW")
+        self.player1 = self.zone1[:]
+
+        # Add player starting positions
+        self.zone2 = self._get_zone("NE")
+        self.player2 = self.zone2[:]
+
+        self._board = Board(size, self.zone1, self.zone2, self._on_process_turn)
         self._board.update(self.player1, self.player2)
 
         self._player_turn = 0
@@ -209,6 +199,45 @@ class Game:
         minutes, secs = divmod(self.time_limit, 60)
         self._timer_text.set("{:02d}:{:02d}".format(minutes, secs))
 
+    def _get_zone(self, corner):
+        zone = []
+        offset_x = 0
+        offset_y = 0
+
+        if corner == "SW":
+            zone.append((0, self._size - 1))
+            offset_x = 1
+            offset_y = -1
+        elif corner == "NE":
+            zone.append((self._size - 1, 0))
+            offset_x = -1
+            offset_y = 1
+        elif corner == "NW":
+            zone.append((0, 0))
+            offset_x = 1
+            offset_y = 1
+        elif corner == "SE":
+            zone.append((self._size - 1, self._size - 1))
+            offset_x = -1
+            offset_y = -1
+
+
+        last_row = zone[:]
+        while len(zone) < self._size * self._size - 1:
+            row = []
+            for piece in last_row:
+                if (piece[0] + offset_x, piece[1]) not in row:
+                    row.append((piece[0] + offset_x, piece[1]))
+                if (piece[0], piece[1] + offset_y) not in row:
+                    row.append((piece[0], piece[1] + offset_y))
+            # Make sure the pieces start from the middle of the diagonal
+            middle = (row[0][0] + row[-1][0]) / 2
+            row = sorted(row, key=lambda pos: abs(pos[0] - middle))
+
+            zone.extend(row)
+            last_row = row[:]
+
+        return zone[:NUM_PIECES[str(self._size)]]
 
     def _on_process_turn(self, event):
         # a way to figure out where should the piece be correctly placed at
