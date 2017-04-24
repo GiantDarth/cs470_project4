@@ -385,36 +385,45 @@ class Game:
         if delta >= self.time_limit:
             print("Time ended: next turn.")
             self.end_turn()
-        elif self._pause:
+        elif not self._pause:
             self._root.after(1000, self.timer)
 
     def move(self, old, pos):
         print(self._board.findLegalMoves(old))
+        error_delay = 2500
         # Not that player's turn
         if self._player_turn == 0:
             if old in self.player2:
-                print(sys.stderr, "Not Green player's turn!")
+                print("Not Green player's turn!", file=sys.stderr)
+                self._input_label.config(text="Not Green player's turn!")
+                self._input_label.after(error_delay, self._clear_input_label)
                 return
             elif old not in self.player1:
                 return
             elif old == pos:
                 return
             elif pos not in self._board.findLegalMoves(old):
-                print(sys.stderr, "Player 1: Illegal move.")
+                print("Red Player: Illegal move.", sys.stderr)
+                self._input_label.config(text="Red Player: Illegal move.")
+                self._input_label.after(error_delay, self._clear_input_label)
                 return
             else:
                 self.player1.remove(old)
                 self.player1.append(pos)
         elif self._player_turn == 1:
             if old in self.player1:
-                print(sys.stderr, "Not Red player's turn!")
+                print("Not Red player's turn!", file=sys.stderr)
+                self._input_label.config(text="Not Green player's turn!")
+                self._input_label.after(error_delay, self._clear_input_label)
                 return
             elif old not in self.player2:
                 return
             elif old == pos:
                 return
             elif pos not in self._board.findLegalMoves(old):
-                print(sys.stderr, "Player 2: Illegal move.")
+                print("Green Player: Illegal move.", sys.stderr)
+                self._input_label.config(text="Green Player: Illegal move.")
+                self._input_label.after(error_delay, self._clear_input_label)
                 return
             else:
                 self.player2.remove(old)
