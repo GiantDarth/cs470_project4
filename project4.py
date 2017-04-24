@@ -14,23 +14,16 @@ OFFSET_Y = 30
 TILE_SIZE = 45
 PIECE_SIZE_DIFF = 5
 
+NUM_PIECES = {"8": 10, "10": 15, "16": 19}
 
 class Board:
-    def __init__(self, size, on_process_turn):
+    def __init__(self, size, zone1, zone2, on_process_turn):
         self._view = tk.Frame()
         self._view.pack(fill=tk.BOTH, expand=1)
         self._size = size
 
-        self._zone1 = [[0, self._size - 1], [0, self._size - 2], [0, self._size - 3],
-                         [0, self._size - 4],
-                         [1, self._size - 1], [1, self._size - 2], [1, self._size - 3],
-                         [2, self._size - 1], [2, self._size - 2],
-                         [3, self._size - 1]]
-        self._zone2 = [[self._size - 1, 0], [self._size - 1, 1], [self._size - 1, 2],
-                         [self._size - 1, 3],
-                         [self._size - 2, 0], [self._size - 2, 1], [self._size - 2, 2],
-                         [self._size - 3, 0], [self._size - 3, 1],
-                         [self._size - 4, 0]]
+        self._zone1 = zone1[:]
+        self._zone2 = zone2[:]
 
         self._on_process_turn = on_process_turn
         self._init_view()
@@ -80,17 +73,17 @@ class Board:
         oldX = (event.x - OFFSET_X) // TILE_SIZE
         oldY = (event.y - OFFSET_Y) // TILE_SIZE
 
-        self._dragged_piece = (piece, [oldX, oldY])
+        self._dragged_piece = (piece, (oldX, oldY))
         self._current_drag_pos = [event.x, event.y]
 
     def _onMove(self, event):
         delta = [event.x - self._current_drag_pos[0], event.y - self._current_drag_pos[1]]
         self._canvas.move(self._dragged_piece[0], delta[0], delta[1])
-        self._current_drag_pos = [event.x, event.y]
+        self._current_drag_pos = (event.x, event.y)
 
     def update(self, player1, player2):
-        self._player1 = player1
-        self._player2 = player2
+        self._player1 = player1[:]
+        self._player2 = player2[:]
 
         for piece in self._player1_pieces:
             self._canvas.delete(piece)
@@ -101,18 +94,18 @@ class Board:
                                                          y * TILE_SIZE + OFFSET_Y + PIECE_SIZE_DIFF,
                                                          (x + 1) * TILE_SIZE + OFFSET_X - PIECE_SIZE_DIFF,
                                                          (y + 1) * TILE_SIZE + OFFSET_Y - PIECE_SIZE_DIFF,
-                                                         fill="#BB578F", tag=("piece", "player1")) for [x, y] in player1]
+                                                         fill="#BB578F", tag=("piece", "player1")) for (x, y) in player1]
         self._player2_pieces = [self._canvas.create_oval(x * TILE_SIZE + OFFSET_X + PIECE_SIZE_DIFF,
                                                          y * TILE_SIZE + OFFSET_Y + PIECE_SIZE_DIFF,
                                                          (x + 1) * TILE_SIZE + OFFSET_X - PIECE_SIZE_DIFF,
                                                          (y + 1) * TILE_SIZE + OFFSET_Y - PIECE_SIZE_DIFF,
-                                                         fill="#B2D965", tag=("piece", "player2")) for [x, y] in player2]
+                                                         fill="#B2D965", tag=("piece", "player2")) for (x, y) in player2]
 
     def get_dragged_piece(self):
         return self._dragged_piece
 
     def _is_tile_empty(self, x, y):
-        return [x, y] in self._player1 or [x, y] in self._player2
+        return (x, y) in self._player1 or (x, y) in self._player2
 
     def findLegalMoves(self, player):
         legalMoves = []
@@ -121,20 +114,20 @@ class Board:
         for i in range(self._size):
             for j in range(self._size):
                 if self._is_tile_empty(i, j):
-                    self.findJump([i, j], [i, j - 1], legalMoves)
-                    self.findJump([i, j], [i, j + 1], legalMoves)
-                    self.findJump([i, j], [i - 1, j], legalMoves)
-                    self.findJump([i, j], [i - 1, j - 1], legalMoves)
-                    self.findJump([i, j], [i - 1, j + 1], legalMoves)
-                    self.findJump([i, j], [i + 1, j], legalMoves)
-                    self.findJump([i, j], [i + 1, j - 1], legalMoves)
-                    self.findJump([i, j], [i + 1, j + 1], legalMoves)
+                    self.findJump((i, j), (i, j - 1), legalMoves)
+                    self.findJump((i, j), (i, j + 1), legalMoves)
+                    self.findJump((i, j), (i - 1, j), legalMoves)
+                    self.findJump((i, j), (i - 1, j - 1), legalMoves)
+                    self.findJump((i, j), (i - 1, j + 1), legalMoves)
+                    self.findJump((i, j), (i + 1, j), legalMoves)
+                    self.findJump((i, j), (i + 1, j - 1), legalMoves)
+                    self.findJump((i, j), (i + 1, j + 1), legalMoves)
 
         # Find regular moves
         for i in range(self._size):
             for j in range(self._size):
                 if self._is_tile_empty(i, j):
-                    self.findRegularMove([i, j], legalMoves)
+                    self.findRegularMove((i, j), legalMoves)
 
         return legalMoves
 
@@ -151,14 +144,14 @@ class Board:
                             (j - transit[1]) == (transit[1] - current[1]) and
                         (not (i == current[0] and j == current[1]))):
                     if self._is_tile_empty(i, j):
-                        legalMoves.append([i, j])
+                        legalMoves.append((i, j))
 
     def findRegularMove(self, current, legalMoves):
         for i in range(current[0] - 1, current[0] + 2):
             for j in range(current[1] - 1, current[1] + 2):
                 if self._is_tile_empty(i, j) and 0 <= i < self._size and 0 <= j < self._size and \
                         not(current[0] == i and current[1] == j):
-                    legalMoves.append([i, j])
+                    legalMoves.append((i, j))
 
 
 class Game:
@@ -169,17 +162,14 @@ class Game:
         self._status_frame = tk.Frame()
         self._status_frame.pack()
 
-        self._board = Board(size, self._on_process_turn)
-        self.player1 = self.zone1 = [[0, self._size - 1], [0, self._size - 2], [0, self._size - 3],
-                         [0, self._size - 4],
-                         [1, self._size - 1], [1, self._size - 2], [1, self._size - 3],
-                         [2, self._size - 1], [2, self._size - 2],
-                         [3, self._size - 1]]
-        self.player2 = self.zone2 = [[self._size - 1, 0], [self._size - 1, 1], [self._size - 1, 2],
-                         [self._size - 1, 3],
-                         [self._size - 2, 0], [self._size - 2, 1], [self._size - 2, 2],
-                         [self._size - 3, 0], [self._size - 3, 1],
-                         [self._size - 4, 0]]
+        self.zone1 = self._get_zone("SW")
+        self.player1 = self.zone1[:]
+
+        # Add player starting positions
+        self.zone2 = self._get_zone("NE")
+        self.player2 = self.zone2[:]
+
+        self._board = Board(size, self.zone1, self.zone2, self._on_process_turn)
         self._board.update(self.player1, self.player2)
 
         self._player_turn = 0
@@ -209,6 +199,45 @@ class Game:
         minutes, secs = divmod(self.time_limit, 60)
         self._timer_text.set("{:02d}:{:02d}".format(minutes, secs))
 
+    def _get_zone(self, corner):
+        zone = []
+        offset_x = 0
+        offset_y = 0
+
+        if corner == "SW":
+            zone.append((0, self._size - 1))
+            offset_x = 1
+            offset_y = -1
+        elif corner == "NE":
+            zone.append((self._size - 1, 0))
+            offset_x = -1
+            offset_y = 1
+        elif corner == "NW":
+            zone.append((0, 0))
+            offset_x = 1
+            offset_y = 1
+        elif corner == "SE":
+            zone.append((self._size - 1, self._size - 1))
+            offset_x = -1
+            offset_y = -1
+
+
+        last_row = zone[:]
+        while len(zone) < self._size * self._size - 1:
+            row = []
+            for piece in last_row:
+                if (piece[0] + offset_x, piece[1]) not in row:
+                    row.append((piece[0] + offset_x, piece[1]))
+                if (piece[0], piece[1] + offset_y) not in row:
+                    row.append((piece[0], piece[1] + offset_y))
+            # Make sure the pieces start from the middle of the diagonal
+            middle = (row[0][0] + row[-1][0]) / 2
+            row = sorted(row, key=lambda pos: abs(pos[0] - middle))
+
+            zone.extend(row)
+            last_row = row[:]
+
+        return zone[:NUM_PIECES[str(self._size)]]
 
     def _on_process_turn(self, event):
         # a way to figure out where should the piece be correctly placed at
@@ -218,7 +247,7 @@ class Game:
         dragged_piece = self._board.get_dragged_piece()
 
         print(newX, newY)
-        self.move(dragged_piece[1], [newX, newY])
+        self.move(dragged_piece[1], (newX, newY))
         self._board.update(self.player1, self.player2)
 
     def timer(self):
