@@ -214,7 +214,7 @@ class Game:
         self._board = Board(size, self.zone1, self.zone2, self._on_process_turn)
         self._board.update(self.player1, self.player2)
 
-        self._player_turn = 0
+        self._player_turn = 1
         self.turn_counter = 0
 
         self._button_frame = tk.Frame()
