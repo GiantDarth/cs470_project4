@@ -332,6 +332,8 @@ class Game:
                 return
             elif old not in self.player1:
                 return
+            elif old == pos:
+                return
             # elif pos not in self._board.findLegalMoves(self.player1):
             #     print(sys.stderr, "Player 1: Illegal move.")
             #     return
@@ -344,6 +346,8 @@ class Game:
                 print(sys.stderr, "Not Red player's turn!")
                 return
             elif old not in self.player2:
+                return
+            elif old == pos:
                 return
             # elif pos not in self._board.findLegalMoves(self.player2):
             #     print(sys.stderr, "Player 2: Illegal move.")
