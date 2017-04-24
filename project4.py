@@ -52,16 +52,6 @@ class Board:
                 if x % 2 == 0:
                     if y % 2 == 0:
                         if (x, y) in self._zone1:
-                            fill = PLAYER_1_DARK_ZONE
-                            tag = ("dark", "zone1")
-                        elif (x, y) in self._zone2:
-                            fill = PLAYER_2_DARK_ZONE
-                            tag = ("dark", "zone2")
-                        else:
-                            fill = DARK_SQUARE_COLOR
-                            tag = "dark"
-                    else:
-                        if (x, y) in self._zone1:
                             fill = PLAYER_1_LIGHT_ZONE
                             tag = ("light", "zone1")
                         elif (x, y) in self._zone2:
@@ -70,19 +60,19 @@ class Board:
                         else:
                             fill = LIGHT_SQUARE_COLOR
                             tag = "light"
+                    else:
+                        if (x, y) in self._zone1:
+                            fill = PLAYER_1_DARK_ZONE
+                            tag = ("dark", "zone1")
+                        elif (x, y) in self._zone2:
+                            fill = PLAYER_2_DARK_ZONE
+                            tag = ("dark", "zone2")
+                        else:
+                            fill = DARK_SQUARE_COLOR
+                            tag = "dark"
                 else:
                     if y % 2 == 0:
                         if (x, y) in self._zone1:
-                            fill = PLAYER_1_LIGHT_ZONE
-                            tag = ("light", "zone1")
-                        elif (x, y) in self._zone2:
-                            fill = PLAYER_2_LIGHT_ZONE
-                            tag = ("light", "zone2")
-                        else:
-                            fill = LIGHT_SQUARE_COLOR
-                            tag = "light"
-                    else:
-                        if (x, y) in self._zone1:
                             fill = PLAYER_1_DARK_ZONE
                             tag = ("dark", "zone1")
                         elif (x, y) in self._zone2:
@@ -91,6 +81,16 @@ class Board:
                         else:
                             fill = DARK_SQUARE_COLOR
                             tag = "dark"
+                    else:
+                        if (x, y) in self._zone1:
+                            fill = PLAYER_1_LIGHT_ZONE
+                            tag = ("light", "zone1")
+                        elif (x, y) in self._zone2:
+                            fill = PLAYER_2_LIGHT_ZONE
+                            tag = ("light", "zone2")
+                        else:
+                            fill = LIGHT_SQUARE_COLOR
+                            tag = "light"
                 self._grid[x][y] = self._canvas.create_rectangle(x * TILE_SIZE + OFFSET_X, y * TILE_SIZE + OFFSET_Y,
                                                                  (x + 1) * TILE_SIZE + OFFSET_X, (y + 1) * TILE_SIZE + OFFSET_Y,
                                                                  outline="#fff", fill=fill, tags=tag)
