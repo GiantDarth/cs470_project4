@@ -47,6 +47,14 @@ class Board:
         self._player2_pieces = []
 
         for x in range(self._size):
+            self._canvas.create_text(int((x + 0.5) * TILE_SIZE) + OFFSET_X, OFFSET_Y // 2, text=chr(65 + x), fill="white")
+            self._canvas.create_text(int((x + 0.5) * TILE_SIZE) + OFFSET_X, self._size * TILE_SIZE + int(1.5 * OFFSET_Y), text=chr(65 + x), fill="white")
+
+        for y in range(self._size):
+            self._canvas.create_text(OFFSET_X // 2, int((self._size - 1 - y + 0.5) * TILE_SIZE) + OFFSET_Y, text=y + 1, fill="white")
+            self._canvas.create_text(self._size * TILE_SIZE + int(1.5 * OFFSET_X), int((self._size - 1 - y + 0.5) * TILE_SIZE) + OFFSET_Y, text=y + 1, fill="white")
+
+        for x in range(self._size):
             for y in range(self._size):
                 fill = tag = ""
                 if x % 2 == 0:
