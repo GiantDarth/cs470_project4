@@ -448,12 +448,12 @@ class Game:
             self._pause = True
             self._board.remove_events()
             self._timer_text.set("0:00")
-            self.update_status("{} Player wins! {} Player loses!".format("Red" if self.player1 == 0 else "Green", "Red" if self.player2 == 0 else "Green"))
+            self.update_status("{} Player wins! {} Player loses!".format("Red" if self.player1 == 0 else "Red", "Green" if self.player2 == 0 else "Green"))
         elif self.winning(self.zone1, self.player2):
             self._pause = True
             self._board.remove_events()
             self._timer_text.set("0:00")
-            self.update_status("{} Player wins! {} Player loses!".format("Red" if self.player1 == 0 else "Green", "Red" if self.player2 == 0 else "Green"))
+            self.update_status("{} Player wins! {} Player loses!".format("Green" if self.player1 == 0 else "Green", "Red" if self.player2 == 0 else "Red"))
         else:
             self._root.after(1000, self.timer)
 
