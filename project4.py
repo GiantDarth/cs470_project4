@@ -234,8 +234,8 @@ class Game:
 
         self._root = root
         self._start_time = time.time()
-        self._root.after(1000, self.timer)
         self.time_limit = 120
+        self._root.after(1000, self.timer)
         self._pause = False
 
         minutes, secs = divmod(self.time_limit, 60)
