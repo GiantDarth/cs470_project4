@@ -241,6 +241,9 @@ class Game:
         minutes, secs = divmod(self.time_limit, 60)
         self._timer_text.set("{:02d}:{:02d}".format(minutes, secs))
 
+    def get_tile_pos(self, pos):
+        return "{}{}".format(chr(65 + pos[0]), self._size - pos[1])
+
     def _get_zone(self, corner):
         zone = []
         offset_x = 0
@@ -331,7 +334,7 @@ class Game:
                 self.player2.remove(old)
                 self.player2.append(pos)
 
-        print("Turn {:d}: Player {:d} {}->{}".format(self.turn_counter, self._player_turn + 1, old, pos))
+        print("Turn {:d}: Player {:d} {}->{}".format(self.turn_counter, self._player_turn + 1, self.get_tile_pos(old), self.get_tile_pos(pos)))
 
         self.end_turn()
 
