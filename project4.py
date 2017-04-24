@@ -107,6 +107,11 @@ class Board:
         self._canvas.tag_bind("piece", "<B1-Motion>", self._onMove)
         self._canvas.tag_bind("piece", "<ButtonRelease-1>", self._on_process_turn)
 
+    def remove_events(self):
+        self._canvas.tag_unbind("piece", "<ButtonPress-1>")
+        self._canvas.tag_unbind("piece", "<B1-Motion>")
+        self._canvas.tag_unbind("piece", "<ButtonRelease-1>")
+
     def _onPressDown(self, event):
         piece = self._canvas.find_closest(event.x, event.y)
         while "piece" not in self._canvas.gettags(piece):
@@ -214,7 +219,7 @@ class Game:
         self._board = Board(size, self.zone1, self.zone2, self._on_process_turn)
         self._board.update(self.player1, self.player2)
 
-        self._player_turn = 0
+        self._player_turn = 1
         self.turn_counter = 0
 
         self._button_frame = tk.Frame()
@@ -226,7 +231,7 @@ class Game:
         self._turn_label = tk.Label(self._status_frame, textvariable=self._turn_text)
         self._turn_label.pack()
 
-        self._turn_text.set("Turn {:d} - Player {:d}".format(self.turn_counter + 1, self._player_turn + 1))
+        self.update_status("Player {}".format("Red" if self._player_turn == 0 else "Green"))
 
         self._timer_text = tk.StringVar()
         self._timer_label = tk.Label(self._status_frame, textvariable=self._timer_text)
@@ -301,14 +306,14 @@ class Game:
         if delta >= self.time_limit:
             print("Time ended: next turn.")
             self.end_turn()
-        else:
+        elif self._pause:
             self._root.after(1000, self.timer)
 
     def move(self, old, pos):
         # Not that player's turn
         if self._player_turn == 0:
             if old in self.player2:
-                print(sys.stderr, "Not player 2's turn!")
+                print(sys.stderr, "Not Green player's turn!")
                 return
             elif old not in self.player1:
                 return
@@ -321,7 +326,7 @@ class Game:
 
         elif self._player_turn == 1:
             if old in self.player1:
-                print(sys.stderr, "Not player 1's turn!")
+                print(sys.stderr, "Not Red player's turn!")
                 return
             elif old not in self.player2:
                 return
@@ -332,7 +337,7 @@ class Game:
                 self.player2.remove(old)
                 self.player2.append(pos)
 
-        print("Turn {:d}: Player {:d} {}->{}".format(self.turn_counter, self._player_turn + 1, self.get_tile_pos(old), self.get_tile_pos(pos)))
+        print("Turn {:d}: Player {} {}->{}".format(self.turn_counter, "Red" if self._player_turn == 0 else "Green", self.get_tile_pos(old), self.get_tile_pos(pos)))
 
         self.end_turn()
 
@@ -345,35 +350,29 @@ class Game:
         self.turn_counter += 1
         self._start_time = time.time()
 
-        self._turn_text.set("Turn {:d} - Player {:d}".format(self.turn_counter + 1, self._player_turn + 1))
+        self.update_status("Player {}".format("Red" if self._player_turn == 0 else "Green"))
 
         if self.winning():
             self._pause = True
+            self._board.remove_events()
+            self._timer_text.set("0:00")
         else:
             self._root.after(1000, self.timer)
 
-    # def _add_reset_btn(self):
-    #     # create a restart button to restart the game
-    #     resetButton = tk.Button(text="RESTART", command=lambda: self.restart())
-    #     resetButton.grid(row=self.boardSize+2, columnspan=self.boardSize)
-    #
-    # def _add_quit_btn(self):
-    #     # create a quit button to quit the game
-    #     quitButton = tk.Button(text="QUIT", command=lambda: self.quit())
-    #     quitButton.grid(row=self.boardSize+4, columnspan=self.boardSize)
-
-    def restart(self):
-        self._board = Board(size, self._on_process_turn)
-
     def winning(self):
         if all(piece in self.zone2 for piece in self.player1):
-            self.displayStatus(mystatus, "Pink player aka player 1 wins!")
-        if all(piece in self.zone1 for piece in self.player2):
-            self.displayStatus(mystatus, "Green player aka player 2 wins!")
+            self.update_status("Red player wins!")
+            return True
+        elif all(piece in self.zone1 for piece in self.player2):
+            self.update_status("Green player wins!")
+            return True
+        else:
+            return False
+
     
-    def displayStatus(alabel, msg):
-        alabel.config(bg='yellow', fg='red', text=msg)
-        alabel.after(3000, lambda: theButton.config(image=newImage, text=newText))
+    def update_status(self, msg):
+        self._turn_text.set("Turn {:d} - {}".format(self.turn_counter + 1, msg))
+
 
 if __name__ == "__main__":
     size = 8
