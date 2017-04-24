@@ -5,8 +5,14 @@ import time
 LIGHT_SQUARE_COLOR = '#CCC'
 DARK_SQUARE_COLOR = "#222"
 
-AREA1_SQUARE_COLOR = '#F3BBF1'
-AREA2_SQUARE_COLOR = '#7CFC00'
+PLAYER_1_COLOR = "#BB578F"
+PLAYER_2_COLOR = "#B2D965"
+
+PLAYER_1_DARK_ZONE = "#D583B1"
+PLAYER_1_LIGHT_ZONE = "#E7AFCF"
+
+PLAYER_2_DARK_ZONE = "#D2F195"
+PLAYER_2_LIGHT_ZONE = "#E3F7BC"
 
 OFFSET_X = 40
 OFFSET_Y = 30
@@ -45,18 +51,46 @@ class Board:
                 fill = tag = ""
                 if x % 2 == 0:
                     if y % 2 == 0:
-                        fill = DARK_SQUARE_COLOR
-                        tag = "dark"
+                        if (x, y) in self._zone1:
+                            fill = PLAYER_1_LIGHT_ZONE
+                            tag = ("light", "zone1")
+                        elif (x, y) in self._zone2:
+                            fill = PLAYER_2_LIGHT_ZONE
+                            tag = ("light", "zone2")
+                        else:
+                            fill = LIGHT_SQUARE_COLOR
+                            tag = "light"
                     else:
-                        fill = LIGHT_SQUARE_COLOR
-                        tag = "light"
+                        if (x, y) in self._zone1:
+                            fill = PLAYER_1_DARK_ZONE
+                            tag = ("dark", "zone1")
+                        elif (x, y) in self._zone2:
+                            fill = PLAYER_2_DARK_ZONE
+                            tag = ("dark", "zone2")
+                        else:
+                            fill = DARK_SQUARE_COLOR
+                            tag = "dark"
                 else:
                     if y % 2 == 0:
-                        fill = LIGHT_SQUARE_COLOR
-                        tag = "light"
+                        if (x, y) in self._zone1:
+                            fill = PLAYER_1_DARK_ZONE
+                            tag = ("dark", "zone1")
+                        elif (x, y) in self._zone2:
+                            fill = PLAYER_2_DARK_ZONE
+                            tag = ("dark", "zone2")
+                        else:
+                            fill = DARK_SQUARE_COLOR
+                            tag = "dark"
                     else:
-                        fill = DARK_SQUARE_COLOR
-                        tag = "DARK_SQUARE_COLOR"
+                        if (x, y) in self._zone1:
+                            fill = PLAYER_1_LIGHT_ZONE
+                            tag = ("light", "zone1")
+                        elif (x, y) in self._zone2:
+                            fill = PLAYER_2_LIGHT_ZONE
+                            tag = ("light", "zone2")
+                        else:
+                            fill = LIGHT_SQUARE_COLOR
+                            tag = "light"
                 self._grid[x][y] = self._canvas.create_rectangle(x * TILE_SIZE + OFFSET_X, y * TILE_SIZE + OFFSET_Y,
                                                                  (x + 1) * TILE_SIZE + OFFSET_X, (y + 1) * TILE_SIZE + OFFSET_Y,
                                                                  outline="#fff", fill=fill, tags=tag)
@@ -94,12 +128,12 @@ class Board:
                                                          y * TILE_SIZE + OFFSET_Y + PIECE_SIZE_DIFF,
                                                          (x + 1) * TILE_SIZE + OFFSET_X - PIECE_SIZE_DIFF,
                                                          (y + 1) * TILE_SIZE + OFFSET_Y - PIECE_SIZE_DIFF,
-                                                         fill="#BB578F", tag=("piece", "player1")) for (x, y) in player1]
+                                                         fill=PLAYER_1_COLOR, tag=("piece", "player1")) for (x, y) in player1]
         self._player2_pieces = [self._canvas.create_oval(x * TILE_SIZE + OFFSET_X + PIECE_SIZE_DIFF,
                                                          y * TILE_SIZE + OFFSET_Y + PIECE_SIZE_DIFF,
                                                          (x + 1) * TILE_SIZE + OFFSET_X - PIECE_SIZE_DIFF,
                                                          (y + 1) * TILE_SIZE + OFFSET_Y - PIECE_SIZE_DIFF,
-                                                         fill="#B2D965", tag=("piece", "player2")) for (x, y) in player2]
+                                                         fill=PLAYER_2_COLOR, tag=("piece", "player2")) for (x, y) in player2]
 
     def get_dragged_piece(self):
         return self._dragged_piece
