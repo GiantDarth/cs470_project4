@@ -266,7 +266,6 @@ class Game:
             offset_x = -1
             offset_y = -1
 
-
         last_row = zone[:]
         while len(zone) < self._size * self._size - 1:
             row = []
@@ -291,7 +290,6 @@ class Game:
 
         dragged_piece = self._board.get_dragged_piece()
 
-        print(newX, newY)
         self.move(dragged_piece[1], (newX, newY))
         self._board.update(self.player1, self.player2)
 
