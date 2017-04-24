@@ -73,17 +73,17 @@ class Board:
         oldX = (event.x - OFFSET_X) // TILE_SIZE
         oldY = (event.y - OFFSET_Y) // TILE_SIZE
 
-        self._dragged_piece = (piece, [oldX, oldY])
+        self._dragged_piece = (piece, (oldX, oldY))
         self._current_drag_pos = [event.x, event.y]
 
     def _onMove(self, event):
         delta = [event.x - self._current_drag_pos[0], event.y - self._current_drag_pos[1]]
         self._canvas.move(self._dragged_piece[0], delta[0], delta[1])
-        self._current_drag_pos = [event.x, event.y]
+        self._current_drag_pos = (event.x, event.y)
 
     def update(self, player1, player2):
-        self._player1 = player1
-        self._player2 = player2
+        self._player1 = player1[:]
+        self._player2 = player2[:]
 
         for piece in self._player1_pieces:
             self._canvas.delete(piece)
@@ -94,18 +94,18 @@ class Board:
                                                          y * TILE_SIZE + OFFSET_Y + PIECE_SIZE_DIFF,
                                                          (x + 1) * TILE_SIZE + OFFSET_X - PIECE_SIZE_DIFF,
                                                          (y + 1) * TILE_SIZE + OFFSET_Y - PIECE_SIZE_DIFF,
-                                                         fill="#BB578F", tag=("piece", "player1")) for [x, y] in player1]
+                                                         fill="#BB578F", tag=("piece", "player1")) for (x, y) in player1]
         self._player2_pieces = [self._canvas.create_oval(x * TILE_SIZE + OFFSET_X + PIECE_SIZE_DIFF,
                                                          y * TILE_SIZE + OFFSET_Y + PIECE_SIZE_DIFF,
                                                          (x + 1) * TILE_SIZE + OFFSET_X - PIECE_SIZE_DIFF,
                                                          (y + 1) * TILE_SIZE + OFFSET_Y - PIECE_SIZE_DIFF,
-                                                         fill="#B2D965", tag=("piece", "player2")) for [x, y] in player2]
+                                                         fill="#B2D965", tag=("piece", "player2")) for (x, y) in player2]
 
     def get_dragged_piece(self):
         return self._dragged_piece
 
     def _is_tile_empty(self, x, y):
-        return [x, y] in self._player1 or [x, y] in self._player2
+        return (x, y) in self._player1 or (x, y) in self._player2
 
     def findLegalMoves(self, player):
         legalMoves = []
@@ -114,20 +114,20 @@ class Board:
         for i in range(self._size):
             for j in range(self._size):
                 if self._is_tile_empty(i, j):
-                    self.findJump([i, j], [i, j - 1], legalMoves)
-                    self.findJump([i, j], [i, j + 1], legalMoves)
-                    self.findJump([i, j], [i - 1, j], legalMoves)
-                    self.findJump([i, j], [i - 1, j - 1], legalMoves)
-                    self.findJump([i, j], [i - 1, j + 1], legalMoves)
-                    self.findJump([i, j], [i + 1, j], legalMoves)
-                    self.findJump([i, j], [i + 1, j - 1], legalMoves)
-                    self.findJump([i, j], [i + 1, j + 1], legalMoves)
+                    self.findJump((i, j), (i, j - 1), legalMoves)
+                    self.findJump((i, j), (i, j + 1), legalMoves)
+                    self.findJump((i, j), (i - 1, j), legalMoves)
+                    self.findJump((i, j), (i - 1, j - 1), legalMoves)
+                    self.findJump((i, j), (i - 1, j + 1), legalMoves)
+                    self.findJump((i, j), (i + 1, j), legalMoves)
+                    self.findJump((i, j), (i + 1, j - 1), legalMoves)
+                    self.findJump((i, j), (i + 1, j + 1), legalMoves)
 
         # Find regular moves
         for i in range(self._size):
             for j in range(self._size):
                 if self._is_tile_empty(i, j):
-                    self.findRegularMove([i, j], legalMoves)
+                    self.findRegularMove((i, j), legalMoves)
 
         return legalMoves
 
@@ -144,14 +144,14 @@ class Board:
                             (j - transit[1]) == (transit[1] - current[1]) and
                         (not (i == current[0] and j == current[1]))):
                     if self._is_tile_empty(i, j):
-                        legalMoves.append([i, j])
+                        legalMoves.append((i, j))
 
     def findRegularMove(self, current, legalMoves):
         for i in range(current[0] - 1, current[0] + 2):
             for j in range(current[1] - 1, current[1] + 2):
                 if self._is_tile_empty(i, j) and 0 <= i < self._size and 0 <= j < self._size and \
                         not(current[0] == i and current[1] == j):
-                    legalMoves.append([i, j])
+                    legalMoves.append((i, j))
 
 
 class Game:
@@ -247,7 +247,7 @@ class Game:
         dragged_piece = self._board.get_dragged_piece()
 
         print(newX, newY)
-        self.move(dragged_piece[1], [newX, newY])
+        self.move(dragged_piece[1], (newX, newY))
         self._board.update(self.player1, self.player2)
 
     def timer(self):
