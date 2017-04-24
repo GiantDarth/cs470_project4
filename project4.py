@@ -37,7 +37,7 @@ class Board:
     def _init_view(self):
         self._canvas = tk.Canvas(self._view, bg="#477D92",
                                  width=OFFSET_X * 2 + TILE_SIZE * self._size,
-                                 height=OFFSET_Y * 2  +TILE_SIZE * self._size)
+                                 height=OFFSET_Y * 2 + TILE_SIZE * self._size)
         self._canvas.pack(expand=1)
 
         self._grid = [[None] * self._size] * self._size
@@ -45,6 +45,14 @@ class Board:
         self._player1_pieces = []
         self._player2 = []
         self._player2_pieces = []
+
+        for x in range(self._size):
+            self._canvas.create_text(int((x + 0.5) * TILE_SIZE) + OFFSET_X, OFFSET_Y // 2, text=chr(65 + x), fill="white")
+            self._canvas.create_text(int((x + 0.5) * TILE_SIZE) + OFFSET_X, self._size * TILE_SIZE + int(1.5 * OFFSET_Y), text=chr(65 + x), fill="white")
+
+        for y in range(self._size):
+            self._canvas.create_text(OFFSET_X // 2, int((self._size - 1 - y + 0.5) * TILE_SIZE) + OFFSET_Y, text=y + 1, fill="white")
+            self._canvas.create_text(self._size * TILE_SIZE + int(1.5 * OFFSET_X), int((self._size - 1 - y + 0.5) * TILE_SIZE) + OFFSET_Y, text=y + 1, fill="white")
 
         for x in range(self._size):
             for y in range(self._size):
@@ -226,12 +234,15 @@ class Game:
 
         self._root = root
         self._start_time = time.time()
-        self._root.after(1000, self.timer)
         self.time_limit = 120
+        self._root.after(1000, self.timer)
         self._pause = False
 
         minutes, secs = divmod(self.time_limit, 60)
         self._timer_text.set("{:02d}:{:02d}".format(minutes, secs))
+
+    def get_tile_pos(self, pos):
+        return "{}{}".format(chr(65 + pos[0]), self._size - pos[1])
 
     def _get_zone(self, corner):
         zone = []
@@ -254,7 +265,6 @@ class Game:
             zone.append((self._size - 1, self._size - 1))
             offset_x = -1
             offset_y = -1
-
 
         last_row = zone[:]
         while len(zone) < self._size * self._size - 1:
@@ -280,7 +290,6 @@ class Game:
 
         dragged_piece = self._board.get_dragged_piece()
 
-        print(newX, newY)
         self.move(dragged_piece[1], (newX, newY))
         self._board.update(self.player1, self.player2)
 
@@ -323,7 +332,7 @@ class Game:
                 self.player2.remove(old)
                 self.player2.append(pos)
 
-        print("Turn {:d}: Player {:d} {}->{}".format(self.turn_counter, self._player_turn + 1, old, pos))
+        print("Turn {:d}: Player {:d} {}->{}".format(self.turn_counter, self._player_turn + 1, self.get_tile_pos(old), self.get_tile_pos(pos)))
 
         self.end_turn()
 
