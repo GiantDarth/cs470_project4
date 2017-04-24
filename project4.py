@@ -1,6 +1,7 @@
 import tkinter as tk
 import sys
 import time
+import argparse
 
 LIGHT_SQUARE_COLOR = '#CCC'
 DARK_SQUARE_COLOR = "#222"
@@ -202,7 +203,7 @@ class Board:
 
 
 class Game:
-    def __init__(self, size, root):
+    def __init__(self, size, t_limit, color, root):
         self._size = size
         self.status = [] # will be set to status widget when created
 
@@ -218,6 +219,14 @@ class Game:
 
         self._board = Board(size, self.zone1, self.zone2, self._on_process_turn)
         self._board.update(self.player1, self.player2)
+
+        if color == "Red":
+            self._human_player = 0
+        elif color == "Green":
+            self._human_player = 1
+        else:
+            print(sys.stderr, "Invalid human player used for Game")
+            sys.exit(1)
 
         self._player_turn = 1
         self.turn_counter = 0
@@ -239,7 +248,7 @@ class Game:
 
         self._root = root
         self._start_time = time.time()
-        self.time_limit = 120
+        self.time_limit = t_limit
         self._root.after(1000, self.timer)
         self._pause = False
 
@@ -368,18 +377,23 @@ class Game:
             return True
         else:
             return False
-
     
     def update_status(self, msg):
         self._turn_text.set("Turn {:d} - {}".format(self.turn_counter + 1, msg))
 
 
 if __name__ == "__main__":
-    size = 8
+    parser = argparse.ArgumentParser(description="Play Halma!")
+    parser.add_argument("--bsize", type=int, help="The board size (8, 10, 16)", choices=[8, 10, 16], dest="size")
+    parser.add_argument("--t-limit", type=int, default=120, help="The time limit (in seconds)", dest="t_limit")
+    parser.add_argument("--h-player", default="Green", help="The human player ('Red' or 'Green')", choices=["Red", "Green"], dest="color")
+    parser.add_argument("--optional", type=open, help="An optional path to a board", dest="board_fp")
+
+    args = parser.parse_args()
 
     root = tk.Tk()
-    root.wm_title("Halma {0:d} x {0:d}".format(size))
-    game = Game(size, root)
+    root.wm_title("Halma {0:d} x {0:d}".format(args.size))
+    game = Game(args.size, args.t_limit, args.color, root)
 
     root.resizable(width=False, height=False)
     root.update()
