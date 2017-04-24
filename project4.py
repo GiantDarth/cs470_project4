@@ -371,22 +371,23 @@ class Game:
 
         self.update_status("Player {}".format("Red" if self._player_turn == 0 else "Green"))
 
-        if self.winning():
+        if self.winning(self.zone2, self.player1):
             self._pause = True
             self._board.remove_events()
             self._timer_text.set("0:00")
+            self.update_status("{} Player wins! {} Player loses!".format("Red" if self.player1 == 0 else "Green", "Red" if self.player2 == 0 else "Green"))
+        elif self.winning(self.zone1, self.player2):
+            self._pause = True
+            self._board.remove_events()
+            self._timer_text.set("0:00")
+            self.update_status("{} Player wins! {} Player loses!".format("Red" if self.player1 == 0 else "Green", "Red" if self.player2 == 0 else "Green"))
         else:
             self._root.after(1000, self.timer)
 
-    def winning(self):
-        if all(piece in self.zone2 for piece in self.player1):
-            self.update_status("Red player wins!")
+    def winning(self, zone, player):
+        if all(piece in zone for piece in player):
             return True
-        elif all(piece in self.zone1 for piece in self.player2):
-            self.update_status("Green player wins!")
-            return True
-        else:
-            return False
+        return False
     
     def update_status(self, msg):
         self._turn_text.set("Turn {:d} - {}".format(self.turn_counter + 1, msg))
