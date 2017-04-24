@@ -2,6 +2,7 @@ import tkinter as tk
 import sys
 import time
 import argparse
+import re
 
 LIGHT_SQUARE_COLOR = '#CCC'
 DARK_SQUARE_COLOR = "#222"
@@ -237,9 +238,18 @@ class Game:
         self.turn_counter = 0
 
         self._button_frame = tk.Frame()
-        self._button_frame.pack(fill=tk.BOTH, expand=1)
-        self._button_quit = tk.Button(self._button_frame, text="OKAY")
-        self._button_quit.pack()
+        self._button_frame.pack()
+
+        self._entry = tk.Entry(self._button_frame)
+        self._entry.grid(row=0, column=0)
+        self._entry.focus_set()
+        self._entry.bind('<Return>', self._on_enter)
+
+        self._entry_btn = tk.Button(self._button_frame, text="Enter", command=self._parse_command)
+        self._entry_btn.grid(row=0, column=1)
+
+        self._input_label = tk.Label(self._button_frame, text="", )
+        self._input_label.grid(row=1, column=0)
 
         self._turn_text = tk.StringVar()
         self._turn_label = tk.Label(self._status_frame, textvariable=self._turn_text)
@@ -260,8 +270,18 @@ class Game:
         minutes, secs = divmod(self.time_limit, 60)
         self._timer_text.set("{:02d}:{:02d}".format(minutes, secs))
 
-    def get_tile_pos(self, pos):
+    def get_coord(self, pos):
         return "{}{}".format(chr(65 + pos[0]), self._size - pos[1])
+
+    def get_tile_pos(self, coord):
+        if not coord or len(coord) < 2 or len(coord) > 3:
+            return None
+        if ord(coord[0].upper()) - 65 < 0 or ord(coord[0].upper()) - 65 >= self._size:
+            return None
+        if int(coord[1:]) < 1 or int(coord[1:]) > self._size:
+            return None
+
+        return ord(coord[0].upper()) - 65, self._size - int(coord[1:])
 
     def _get_zone(self, corner):
         zone = []
@@ -301,6 +321,42 @@ class Game:
             last_row = row[:]
 
         return zone[:NUM_PIECES[str(self._size)]]
+
+    def _on_enter(self, event):
+        self._parse_command()
+
+    def _clear_input_label(self):
+        self._input_label.config(text="")
+
+    def _parse_command(self):
+        cmd = self._entry.get()
+        self._entry.delete(0, tk.END)
+        error_delay = 2500
+        if '->' not in cmd:
+            print(cmd, "is not a valid command!", file=sys.stderr)
+            self._input_label.config(text=cmd + " is not a valid command!")
+            self._input_label.after(error_delay, self._clear_input_label)
+            return
+        old_coord, new_coord = re.split('->', cmd)
+
+        old_pos = self.get_tile_pos(old_coord)
+        new_pos = self.get_tile_pos(new_coord)
+
+        if not old_pos:
+            print(old_coord, "is not a valid coord!", file=sys.stderr)
+            self._input_label.config(text=old_coord + " is not a valid coord!")
+            self._input_label.after(error_delay, self._clear_input_label)
+            return
+        elif not new_pos:
+            print(new_coord, "is not a valid coord!", file=sys.stderr)
+            self._input_label.config(text=new_coord + " is not a valid coord!")
+            self._input_label.after(error_delay, self._clear_input_label)
+            return
+
+        print(old_pos, new_pos)
+
+        self.move(old_pos, new_pos)
+        self._board.update(self.player1, self.player2)
 
     def _on_process_turn(self, event):
         # a way to figure out where should the piece be correctly placed at
@@ -356,7 +412,7 @@ class Game:
                 self.player2.remove(old)
                 self.player2.append(pos)
 
-        print("Turn {:d}: Player {} {}->{}".format(self.turn_counter, "Red" if self._player_turn == 0 else "Green", self.get_tile_pos(old), self.get_tile_pos(pos)))
+        print("Turn {:d}: Player {} {}->{}".format(self.turn_counter, "Red" if self._player_turn == 0 else "Green", self.get_coord(old), self.get_coord(pos)))
 
         self.end_turn()
 
@@ -383,6 +439,9 @@ class Game:
             self.update_status("{} Player wins! {} Player loses!".format("Red" if self.player1 == 0 else "Green", "Red" if self.player2 == 0 else "Green"))
         else:
             self._root.after(1000, self.timer)
+
+        self._clear_input_label()
+        self._entry.delete(0, tk.END)
 
     def winning(self, zone, player):
         if all(piece in zone for piece in player):
