@@ -441,19 +441,28 @@ class Game:
 
         self.end_turn()
 
-    def minimax(self, player, board):
+    def getScore(self, board, player):
+        # needs to figure out a good way to get the score
+        # my idea is to measure how close these pieces to the opponent region and
+        # this just a simple idea
+        pass
+
+    def minimax(self, player, board, depth):
         availableMoves = set()
 
         # we want to first check if the node is a terminal node
-        # still trying to figure this out
-        # todo
+        # if its a terminal node, we want to get the score
+        # if depth is 0, then it's a terminal node
+        if (depth == 0):
+            return self.getScore(board, player)
 
         # since Green player plays first,,then Red player can be considered as an opponent
         # we want to minimize the value when opponent(Red player) plays
         # and maximize the value when Green player plays
         if (player == "Red"):
-            minimum = INFINITY
+            beta = INFINITY
 
+            # this part is not right, because we don't want to make change on the real player every time
             for piece in self.player1:
                 availableMoves.add((piece, self._board.findLegalMoves(piece)))
 
@@ -467,15 +476,16 @@ class Game:
                 # todo
                 # self.move(oldPosition, newPosition)
 
-                temp = self.minimax("Green", newBoard)
-                if (temp < minimum):
-                    minimum = temp
+                temp = self.minimax("Green", newBoard, depth-1)
+                if (temp < beta):
+                    beta = temp
 
-            return minimum
+            return beta
 
         elif (player == "Green"):
-            maximum = NEGATIVE_INFINITY
+            alpha = NEGATIVE_INFINITY
 
+            # same as above, don't want to use self.player2
             for piece in self.player2:
                 availableMoves.add((piece, self._board.findLegalMoves(piece)))
 
@@ -487,14 +497,16 @@ class Game:
                 # todo
                # self.move(oldPosition, newPosition)
 
-                temp = self.minimax("Red", newBoard)
-                if (temp < mamimum):
-                    maximum = temp
+                temp = self.minimax("Red", newBoard, depth-1)
+                if (temp < alpha):
+                    alpha = temp
 
-            return maximum
+            return alpha
 
 
  #   def alphaBeta(self):
+        # this one is really similar to the minimax, so I ll just leave this for now and
+        # figure out the minimax first
         # todo
 
     def end_turn(self):
