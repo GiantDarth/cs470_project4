@@ -453,13 +453,13 @@ class Game:
         # we want to first check if the node is a terminal node
         # if its a terminal node, we want to get the score
         # if depth is 0, then it's a terminal node
-        if (depth == 0):
+        if depth == 0:
             return self.getScore(board, player)
 
         # since Green player plays first,,then Red player can be considered as an opponent
         # we want to minimize the value when opponent(Red player) plays
         # and maximize the value when Green player plays
-        if (player == "Red"):
+        if player == "Red":
             beta = INFINITY
 
             # this part is not right, because we don't want to make change on the real player every time
@@ -482,7 +482,7 @@ class Game:
 
             return beta
 
-        elif (player == "Green"):
+        elif player == "Green":
             alpha = NEGATIVE_INFINITY
 
             # same as above, don't want to use self.player2
@@ -498,7 +498,7 @@ class Game:
                # self.move(oldPosition, newPosition)
 
                 temp = self.minimax("Red", newBoard, depth-1)
-                if (temp < alpha):
+                if temp < alpha:
                     alpha = temp
 
             return alpha
