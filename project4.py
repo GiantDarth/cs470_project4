@@ -399,8 +399,8 @@ class Game:
         # Not that player's turn
         if self._player_turn == 0:
             if old in self.player2:
-                print("Not Green player's turn!", file=sys.stderr)
-                self._input_label.config(text="Not Green player's turn!")
+                print("It's currently Red player's turn!", file=sys.stderr)
+                self._input_label.config(text="It's currently Red player's turn!")
                 self._input_label.after(error_delay, self._clear_input_label)
                 return
             elif old not in self.player1:
@@ -417,8 +417,8 @@ class Game:
                 self.player1.append(pos)
         elif self._player_turn == 1:
             if old in self.player1:
-                print("Not Red player's turn!", file=sys.stderr)
-                self._input_label.config(text="Not Red player's turn!")
+                print("It's currently Green player's turn!", file=sys.stderr)
+                self._input_label.config(text="It's currently Green player's turn!")
                 self._input_label.after(error_delay, self._clear_input_label)
                 return
             elif old not in self.player2:
@@ -524,12 +524,12 @@ class Game:
             self._pause = True
             self._board.remove_events()
             self._timer_text.set("0:00")
-            self.update_status("{} Player wins! {} Player loses!".format("Red" if self.player1 == 0 else "Green", "Red" if self.player2 == 0 else "Green"))
+            self.update_status("{} Player wins! {} Player loses!".format("Red", "Green"))
         elif self.winning(self.zone1, self.player2):
             self._pause = True
             self._board.remove_events()
             self._timer_text.set("0:00")
-            self.update_status("{} Player wins! {} Player loses!".format("Red" if self.player1 == 0 else "Green", "Red" if self.player2 == 0 else "Green"))
+            self.update_status("{} Player wins! {} Player loses!".format("Green", "Red"))
         else:
             self._root.after(1000, self.timer)
 
