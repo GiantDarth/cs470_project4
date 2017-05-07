@@ -33,7 +33,6 @@ class Board:
         self._view = tk.Frame()
         self._view.pack(fill=tk.BOTH, expand=1)
         self._size = size
-        self.jump = False
 
         self._zone1 = zone1[:]
         self._zone2 = zone2[:]
@@ -187,11 +186,6 @@ class Board:
                         # Add new jumps, but ignore the ones already found.
                         current_jumps |= self.findJump((move[0], move[1]), (x, y)) - legalMoves
             last_jumps = current_jumps.copy()
-
-        if legalMoves:
-            self.jump = True
-        else:
-            self.jump = False
 
         # Find regular moves
         self.findRegularMove((i, j), legalMoves)
