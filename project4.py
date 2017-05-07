@@ -170,18 +170,21 @@ class Board:
         if self._is_tile_empty(i, j):
             return legalMoves
 
-        # first, we want to find all jump moves
+        # Find the jumps from the initial position
         current_jumps = set()
         for x in range(i - 1, i + 2):
             for y in range(j - 1, j + 2):
                 current_jumps |= self.findJump((i, j), (x, y))
+        # Find new jumps from last used jump positions, until no more exist.
         last_jumps = current_jumps.copy()
         while last_jumps:
+            # Add last jumps to all possible moves
             legalMoves |= last_jumps
             current_jumps = set()
             for move in last_jumps:
                 for x in range(move[0] - 1, move[0] + 2):
                     for y in range(move[1] - 1, move[1] + 2):
+                        # Add new jumps, but ignore the ones already found.
                         current_jumps |= self.findJump((move[0], move[1]), (x, y)) - legalMoves
             last_jumps = current_jumps.copy()
 
