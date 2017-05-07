@@ -3,6 +3,7 @@ import sys
 import time
 import argparse
 import re
+import copy
 
 LIGHT_SQUARE_COLOR = '#CCC'
 DARK_SQUARE_COLOR = "#222"
@@ -21,6 +22,9 @@ OFFSET_Y = 30
 
 TILE_SIZE = 45
 PIECE_SIZE_DIFF = 5
+
+INFINITY = 100000
+NEGATIVE_INFINITY = -100000
 
 NUM_PIECES = {"8": 10, "10": 15, "16": 19}
 
@@ -232,7 +236,7 @@ class Game:
         self.zone2 = self._get_zone("NE")
         self.player2 = self.zone2[:]
 
-        self._board = Board(size, self.zone1, self.zone2, self._on_process_turn)
+        self._board = Board(self._size, self.zone1, self.zone2, self._on_process_turn)
         self._board.update(self.player1, self.player2)
 
         if color == "Red":
@@ -257,7 +261,7 @@ class Game:
         self._entry_btn = tk.Button(self._button_frame, text="Enter", command=self._parse_command)
         self._entry_btn.grid(row=0, column=1)
 
-        self._input_label = tk.Label(self._button_frame, text="", )
+        self._input_label = tk.Label(self._button_frame, text="Welcome to Halma!!!")
         self._input_label.grid(row=1, column=0)
 
         self._turn_text = tk.StringVar()
@@ -275,6 +279,7 @@ class Game:
         self.time_limit = t_limit
         self._root.after(1000, self.timer)
         self._pause = False
+        self._best_move = []
 
         minutes, secs = divmod(self.time_limit, 60)
         self._timer_text.set("{:02d}:{:02d}".format(minutes, secs))
@@ -394,8 +399,8 @@ class Game:
         # Not that player's turn
         if self._player_turn == 0:
             if old in self.player2:
-                print("Not your  turn, Red player's turn!", file=sys.stderr)
-                self._input_label.config(text="Not your turn, Red player's turn!")
+                print("It's currently Red player's turn!", file=sys.stderr)
+                self._input_label.config(text="It's currently Red player's turn!")
                 self._input_label.after(error_delay, self._clear_input_label)
                 return
             elif old not in self.player1:
@@ -403,8 +408,8 @@ class Game:
             elif old == pos:
                 return
             elif pos not in self._board.findLegalMoves(old):
-                print("Red Player: Illegal move.", sys.stderr)
-                self._input_label.config(text="Red Player: Illegal move.")
+                print("Red Player: Illegal move.", file=sys.stderr)
+                self._input_label.config(text="Red Player:s Illegal move.")
                 self._input_label.after(error_delay, self._clear_input_label)
                 return
             else:
@@ -412,8 +417,8 @@ class Game:
                 self.player1.append(pos)
         elif self._player_turn == 1:
             if old in self.player1:
-                print("Not your turn, Green player's turn!", file=sys.stderr)
-                self._input_label.config(text="Not your turn, Green player's turn!")
+                print("It's currently Green player's turn!", file=sys.stderr)
+                self._input_label.config(text="It's currently Green player's turn!")
                 self._input_label.after(error_delay, self._clear_input_label)
                 return
             elif old not in self.player2:
@@ -421,7 +426,7 @@ class Game:
             elif old == pos:
                 return
             elif pos not in self._board.findLegalMoves(old):
-                print("Green Player: Illegal move.", sys.stderr)
+                print("Green Player: Illegal move.", file=sys.stderr)
                 self._input_label.config(text="Green Player: Illegal move.")
                 self._input_label.after(error_delay, self._clear_input_label)
                 return
@@ -430,8 +435,79 @@ class Game:
                 self.player2.append(pos)
 
         print("Turn {:d}: Player {} {}->{}".format(self.turn_counter, "Red" if self._player_turn == 0 else "Green", self.get_coord(old), self.get_coord(pos)))
+        self._input_label.config(text="Turn {:d}: Player {} {}->{}".format(self.turn_counter, "Red" if self._player_turn == 0 else "Green", self.get_coord(old), self.get_coord(pos)))
+        self._input_label.after(error_delay, self._clear_input_label)
+        print(self.player1)
 
         self.end_turn()
+
+    def getScore(self, board, player):
+        # needs to figure out a good way to get the score
+        # my idea is to measure how close these pieces to the opponent region and
+        # this just a simple idea
+        pass
+
+    def minimax(self, player, board, depth):
+        availableMoves = set()
+
+        # we want to first check if the node is a terminal node
+        # if its a terminal node, we want to get the score
+        # if depth is 0, then it's a terminal node
+        if (depth == 0):
+            return self.getScore(board, player)
+
+        # since Green player plays first,,then Red player can be considered as an opponent
+        # we want to minimize the value when opponent(Red player) plays
+        # and maximize the value when Green player plays
+        if (player == "Red"):
+            beta = INFINITY
+
+            # this part is not right, because we don't want to make change on the real player every time
+            for piece in self.player1:
+                availableMoves.add((piece, self._board.findLegalMoves(piece)))
+
+            for position in availableMoves:
+                oldPosition = position[0]
+                newPosition = position[1]
+                newBoard = deepcopy(board)
+
+                # I think we don't want to move it on the real board every time
+                # so I am leaving this part for now
+                # todo
+                # self.move(oldPosition, newPosition)
+
+                temp = self.minimax("Green", newBoard, depth-1)
+                if (temp < beta):
+                    beta = temp
+
+            return beta
+
+        elif (player == "Green"):
+            alpha = NEGATIVE_INFINITY
+
+            # same as above, don't want to use self.player2
+            for piece in self.player2:
+                availableMoves.add((piece, self._board.findLegalMoves(piece)))
+
+            for position in availableMoves:
+                oldPosition = position[0]
+                newPosition = position[1]
+                newBoard = deepcopy(board)
+
+                # todo
+               # self.move(oldPosition, newPosition)
+
+                temp = self.minimax("Red", newBoard, depth-1)
+                if (temp < alpha):
+                    alpha = temp
+
+            return alpha
+
+
+ #   def alphaBeta(self):
+        # this one is really similar to the minimax, so I ll just leave this for now and
+        # figure out the minimax first
+        # todo
 
     def end_turn(self):
         if self._player_turn == 0:
@@ -448,12 +524,12 @@ class Game:
             self._pause = True
             self._board.remove_events()
             self._timer_text.set("0:00")
-            self.update_status("{} Player wins! {} Player loses!".format("Red" if self.player1 == 0 else "Red", "Green" if self.player2 == 0 else "Green"))
+            self.update_status("{} Player wins! {} Player loses!".format("Red", "Green"))
         elif self.winning(self.zone1, self.player2):
             self._pause = True
             self._board.remove_events()
             self._timer_text.set("0:00")
-            self.update_status("{} Player wins! {} Player loses!".format("Green" if self.player1 == 0 else "Green", "Red" if self.player2 == 0 else "Red"))
+            self.update_status("{} Player wins! {} Player loses!".format("Green", "Red"))
         else:
             self._root.after(1000, self.timer)
 
@@ -471,8 +547,8 @@ class Game:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Play Halma!")
-    parser.add_argument("--bsize", type=int, help="The board size (8, 10, 16)", choices=[8, 10, 16], dest="size")
-    parser.add_argument("--t-limit", type=int, default=120, help="The time limit (in seconds)", dest="t_limit")
+    parser.add_argument("--bsize", type=int, help="The board size (8, 10, 16)", choices=[8, 10, 12], dest="size")
+    parser.add_argument("--t-limit", default=20, type=int, help="The time limit (in seconds)", dest="t_limit")
     parser.add_argument("--h-player", default="Green", help="The human player ('Red' or 'Green')", choices=["Red", "Green"], dest="color")
     parser.add_argument("--optional", type=open, help="An optional path to a board", dest="board_fp")
 
