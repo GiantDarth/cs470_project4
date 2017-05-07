@@ -3,7 +3,7 @@ import sys
 import time
 import argparse
 import re
-import copy
+from copy import deepcopy
 
 LIGHT_SQUARE_COLOR = '#CCC'
 DARK_SQUARE_COLOR = "#222"
