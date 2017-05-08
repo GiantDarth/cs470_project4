@@ -544,7 +544,7 @@ class Game:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Play Halma!")
-    parser.add_argument("--bsize", type=int, help="The board size (8, 10, 16)", choices=[8, 10, 12], dest="size")
+    parser.add_argument("--bsize", type=int, help="The board size (8, 10, 16)", choices=[8, 10, 16], dest="size")
     parser.add_argument("--t-limit", default=20, type=int, help="The time limit (in seconds)", dest="t_limit")
     parser.add_argument("--h-player", default="Green", help="The human player ('Red' or 'Green')", choices=["Red", "Green"], dest="color")
     parser.add_argument("--optional", type=open, help="An optional path to a board", dest="board_fp")
