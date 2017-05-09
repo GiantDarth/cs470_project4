@@ -594,15 +594,37 @@ class Game:
                     break
             return beta
 
-        depth = 2
-        best = None
-        best_score = -16777216
-        for depth in range(0, 16777216):
-            for move in all_moves(board, player):
-                score = alphabeta(update_board(board, move), depth, -16777216, 16777216,player)
-            if time.time() >= stoptime:
-                break
-        c.move(best)
+
+            #This is another alpha beta way
+        #
+        # opponent = (player%2) + 1
+        # if depth == 0:
+        #     return -distance(board, player)
+        # if player == player:
+        #     for move in all_moves(board, player):
+        #         nboard = update_board(board, move)
+        #         alpha = max(alpha, alphabeta(nboard, depth -1, alpha, beta, opponent))
+        #         if beta <= alpha:
+        #             break
+        #     return alpha
+        # else:
+        #     for move in all_moves(board, player):
+        #         nboard = update_board(board, move)
+        #         beta = min(beta, alphabeta(nboard, depth -1, alpha, beta, opponent))
+        #         if beta <= alpha:
+        #             break
+        #     return beta
+        #
+        # depth = 2
+        # best = None
+        # best_score = -16777216
+        # for depth in range(0, 16777216):
+        #     for move in all_moves(board, player):
+        #         print ("I am thinking", move, depth)
+        #         score = alphabeta(update_board(board, move), depth, -16777216, 16777216,player)
+        #     if time.time() >= stoptime:
+        #         break
+        # c.move(best)
 
     def end_turn(self):
         if self._player_turn == 0:
