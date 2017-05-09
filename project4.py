@@ -589,7 +589,7 @@ class Game:
 
         if player == turn:
             for i in range(len(moves)):
-                new_board = deepcopy(board)
+                new_board = deepcopy(board)#self.player1[:] and self.player2[:]
                 move((moves[i][0], moves[i][1]), (moves[i][2], moves[i][3]), new_board)
                 if player == 'green': player = 'red'
                 else: player = 'green'
@@ -602,7 +602,7 @@ class Game:
             return alpha
         else:
             for i in range(len(moves)):
-                new_board = deepcopy(board)
+                new_board = deepcopy(board)#self.player1[:] and self.player2[:]
                 move((moves[i][0], moves[i][1]), (moves[i][2], moves[i][3]), new_board)
                 if player == 'green': player = 'red'
                 else: player ='green'
