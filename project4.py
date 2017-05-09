@@ -482,14 +482,15 @@ class Game:
 
     def minimax(self, player, board, depth):
         availableMoves = set()
+        global best_move
 
         # we want to first check if the node is a terminal node
         # if its a terminal node, we want to get the score
         # if depth is 0, then it's a terminal node
         if depth == 0:
-            return self.getScore(board, player)
+            return self.evalulation_func(board, player)
 
-        # since Green player plays first,,then Red player can be considered as an opponent
+        # since Green player plays first, then Red player can be considered as an opponent
         # we want to minimize the value when opponent(Red player) plays
         # and maximize the value when Green player plays
         if player == "Red":
@@ -536,11 +537,37 @@ class Game:
 
             return alpha
 
-
- #   def alphaBeta(self):
+    def alphaBeta(self, board, alpha, beta, player):
         # this one is really similar to the minimax, so I ll just leave this for now and
         # figure out the minimax first
         # todo
+        opponent = (player%2) + 1
+        if depth == 0
+            return -distance(board, player)
+        if player == player:
+            for move in all_moves(board, player):
+                nboard = update_board(board, move)
+                alpha = max(alpha, alphabeta(nboard, depth -1, alpha, beta, opponent))
+                if beta <= alpha:
+                    break
+            return alpha
+        else:
+            for move in all_moves(board, player):
+                nboard = update_board(board, move)
+                beta = min(beta, alphabeta(nboard, depth -1, alpha, beta, opponent))
+                if beta <= alpha:
+                    break
+            return beta
+
+        depth = 2
+        best = None
+        best_score = -16777216
+        for depth in range(0, 16777216):
+            for move in all_moves(board, player):
+                score = alphabeta(update_board(board, move), depth, -16777216, 16777216,player)
+            if time.time() >= stoptime:
+                break
+        c.move(best)
 
     def end_turn(self):
         if self._player_turn == 0:
@@ -574,9 +601,41 @@ class Game:
     
     def update_status(self, msg):
         self._turn_text.set("Turn {:d} - {}".format(self.turn_counter + 1, msg))
-
+        
     def update_score(self, player1_score, player2_score):
         self._score_text.set("Red: {:f} - Green: {:f}".format(player1_score, player2_score))
+
+    # minimax(n: node): int =
+    #     if leaf(n) then return evaluate(n)
+    #     if n is a max node
+    #         v:= L
+    #         for each child of n
+    #             v' := minimax (child)
+    #             if v' > v, v:= v'
+    #         return v
+    #     if n is a min node
+    #         v:= W
+    #         for each child of n
+    #             v' := minimax (child)
+    #             if v' < v, v:= v'
+    #         return v
+    #
+    # minimax(n: node, d: int, min: int, max: int): int =
+    #     if leaf(n) or depth=0 return evaluate(n)
+    #     if n is a max node
+    #         v:= min
+    #         for each child of n
+    #             v' := minimax (child,d-1,v,max)
+    #             if v' > v, v:= v'
+    #             if v > max return max
+    #         return v
+    #     if n is a min node
+    #         v:= max
+    #         for each child of n
+    #             v' := minimax (child,d-1,min,v)
+    #             if v' < v, v:= v'
+    #             if v < min return min
+    #         return v
 
 
 if __name__ == "__main__":
