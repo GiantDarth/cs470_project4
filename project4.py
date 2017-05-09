@@ -579,37 +579,37 @@ class Game:
     def update_status(self, msg):
         self._turn_text.set("Turn {:d} - {}".format(self.turn_counter + 1, msg))
 
-    minimax(n: node): int =
-        if leaf(n) then return evaluate(n)
-        if n is a max node
-            v:= L
-            for each child of n
-                v' := minimax (child)
-                if v' > v, v:= v'
-            return v
-        if n is a min node
-            v:= W
-            for each child of n
-                v' := minimax (child)
-                if v' < v, v:= v'
-            return v
-
-    minimax(n: node, d: int, min: int, max: int): int =
-        if leaf(n) or depth=0 return evaluate(n)
-        if n is a max node
-            v:= min
-            for each child of n
-                v' := minimax (child,d-1,v,max)
-                if v' > v, v:= v'
-                if v > max return max
-            return v
-        if n is a min node
-            v:= max
-            for each child of n
-                v' := minimax (child,d-1,min,v)
-                if v' < v, v:= v'
-                if v < min return min
-            return v
+    # minimax(n: node): int =
+    #     if leaf(n) then return evaluate(n)
+    #     if n is a max node
+    #         v:= L
+    #         for each child of n
+    #             v' := minimax (child)
+    #             if v' > v, v:= v'
+    #         return v
+    #     if n is a min node
+    #         v:= W
+    #         for each child of n
+    #             v' := minimax (child)
+    #             if v' < v, v:= v'
+    #         return v
+    #
+    # minimax(n: node, d: int, min: int, max: int): int =
+    #     if leaf(n) or depth=0 return evaluate(n)
+    #     if n is a max node
+    #         v:= min
+    #         for each child of n
+    #             v' := minimax (child,d-1,v,max)
+    #             if v' > v, v:= v'
+    #             if v > max return max
+    #         return v
+    #     if n is a min node
+    #         v:= max
+    #         for each child of n
+    #             v' := minimax (child,d-1,min,v)
+    #             if v' < v, v:= v'
+    #             if v < min return min
+    #         return v
 
 
 if __name__ == "__main__":
