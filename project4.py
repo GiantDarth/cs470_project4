@@ -467,14 +467,10 @@ class Game:
     def evalulation_func(self, board, player):
         # If Red Player
         if player == 0:
-            # Get corner coordinate of Green Player's zone
-            goal_coord = self.zone2[0]
-            return sum(math.sqrt((piece[0] - goal_coord[0])**2 + (piece[1] - goal_coord[1])**2) for piece in self.player1)
+            return sum(Game._get_shortest_distance(piece, self.zone2) for piece in self.player1)
         # If Green Player
         elif player == 1:
-            # Get corner coordinate of Red Player's zone zone
-            goal_coord = self.zone1[0]
-            return sum(math.sqrt((piece[0] - goal_coord[0])**2 + (piece[1] - goal_coord[1])**2) for piece in self.player2)
+            return sum(Game._get_shortest_distance(piece, self.zone1) for piece in self.player2)
         else:
             return float("nan")
 
