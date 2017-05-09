@@ -1,8 +1,8 @@
 import tkinter as tk
+from tkinter import messagebox
 import sys
 import time
 import argparse
-import re
 import math
 from copy import deepcopy
 
@@ -30,7 +30,7 @@ NEGATIVE_INFINITY = -100000
 NUM_PIECES = {"8": 10, "10": 15, "16": 19}
 
 class Board:
-    def __init__(self, size, zone1, zone2, on_process_turn):
+    def __init__(self, size, zone1, zone2, human_player, on_process_turn, on_non_human):
         self._view = tk.Frame()
         self._view.pack(fill=tk.BOTH, expand=1)
         self._size = size
@@ -39,7 +39,10 @@ class Board:
         self._zone2 = zone2[:]
 
         self._on_process_turn = on_process_turn
+        self._on_non_human = on_non_human
+        self._human_player = human_player
         self._init_view()
+        self.add_events()
 
     def _init_view(self):
         self._canvas = tk.Canvas(self._view, bg="#477D92",
@@ -110,14 +113,21 @@ class Board:
                                                                  (x + 1) * TILE_SIZE + OFFSET_X, (y + 1) * TILE_SIZE + OFFSET_Y,
                                                                  outline="#fff", fill=fill, tags=tag)
 
-        self._canvas.tag_bind("piece", "<ButtonPress-1>", self._onPressDown)
-        self._canvas.tag_bind("piece", "<B1-Motion>", self._onMove)
-        self._canvas.tag_bind("piece", "<ButtonRelease-1>", self._on_process_turn)
+    def add_events(self):
+        human_tag = "player1" if self._human_player == 0 else "player2"
+        non_human_tag = "player2" if self._human_player == 0 else "player1"
+
+        self._canvas.tag_bind(human_tag, "<ButtonPress-1>", self._onPressDown)
+        self._canvas.tag_bind(human_tag, "<B1-Motion>", self._onMove)
+        self._canvas.tag_bind(human_tag, "<ButtonRelease-1>", self._on_process_turn)
+
+        self._canvas.tag_bind(non_human_tag, "<ButtonPress-1>", self._on_non_human)
 
     def remove_events(self):
-        self._canvas.tag_unbind("piece", "<ButtonPress-1>")
-        self._canvas.tag_unbind("piece", "<B1-Motion>")
-        self._canvas.tag_unbind("piece", "<ButtonRelease-1>")
+        for tag in ["player1", "player2"]:
+            self._canvas.tag_unbind(tag, "<ButtonPress-1>")
+            self._canvas.tag_unbind(tag, "<B1-Motion>")
+            self._canvas.tag_unbind(tag, "<ButtonRelease-1>")
 
     def _onPressDown(self, event):
         piece = self._canvas.find_closest(event.x, event.y)
@@ -234,9 +244,6 @@ class Game:
         self.zone2 = self._get_zone("NE")
         self.player2 = self.zone2[:]
 
-        self._board = Board(self._size, self.zone1, self.zone2, self._on_process_turn)
-        self._board.update(self.player1, self.player2)
-
         if color == "Red":
             self._human_player = 0
         elif color == "Green":
@@ -245,22 +252,23 @@ class Game:
             print(sys.stderr, "Invalid human player used for Game")
             sys.exit(1)
 
+        self._board = Board(self._size, self.zone1, self.zone2, self._human_player, self._on_process_turn, self._on_non_human)
+        self._board.update(self.player1, self.player2)
+
         self._player_turn = 1
-        self.turn_counter = 0
+        self.ply_counter = 0
 
         self._button_frame = tk.Frame()
         self._button_frame.pack()
 
-        self._entry = tk.Entry(self._button_frame)
-        self._entry.grid(row=0, column=0)
-        self._entry.focus_set()
-        self._entry.bind('<Return>', self._on_enter)
+        self._pause_btn = tk.Button(self._button_frame, text="Pause", command=self._toggle_pause)
+        self._pause_btn.grid(row=0, column=0)
 
-        self._entry_btn = tk.Button(self._button_frame, text="Enter", command=self._parse_command)
-        self._entry_btn.grid(row=0, column=1)
+        self._next_turn_btn = tk.Button(self._button_frame, text="Skip Turn", command=self.end_turn)
+        self._next_turn_btn.grid(row=0, column=2)
 
         self._input_label = tk.Label(self._button_frame, text="Welcome to Halma!!!")
-        self._input_label.grid(row=1, column=0)
+        self._input_label.grid(row=1, column=1)
 
         self._turn_text = tk.StringVar()
         self._turn_label = tk.Label(self._status_frame, textvariable=self._turn_text)
@@ -280,9 +288,12 @@ class Game:
 
         self._root = root
         self._start_time = time.time()
+        self._pause_time = self._start_time
         self.time_limit = t_limit
-        self._root.after(1000, self.timer)
         self._pause = False
+        self._timer_job = None
+        self._clear_job = None
+        self.timer()
         self._best_move = []
 
         minutes, secs = divmod(self.time_limit, 60)
@@ -292,10 +303,18 @@ class Game:
             self.non_human_player_process_turn()
 
     def non_human_player_process_turn(self):
-        old, new = self.minimax(self._player_turn, self._board, 10)
+        self._next_turn_btn.config(state=tk.DISABLED, text="End Turn")
+
+        # old, new = self.minimax(self._player_turn, self._board, 10)
+        old, new = (0, 4), (0, 3)
+
+        self._pause = True
+        self._root.after_cancel(self._timer_job)
 
         self.move(old, new)
-        self._board.update(self.player1, self.player2)
+
+        messagebox.showinfo("Non-Human Player Turn Done", "{} -> {}".format(self.get_coord(old), self.get_coord(new)))
+        self._next_turn_btn.config(state=tk.NORMAL, text="End Turn")
 
     def get_coord(self, pos):
         return "{}{}".format(chr(65 + pos[0]), self._size - pos[1])
@@ -349,41 +368,28 @@ class Game:
 
         return zone[:NUM_PIECES[str(self._size)]]
 
-    def _on_enter(self, event):
-        self._parse_command()
-
     def _clear_input_label(self):
         self._input_label.config(text="")
 
-    def _parse_command(self):
-        cmd = self._entry.get()
-        self._entry.delete(0, tk.END)
-        error_delay = 2500
-        if '->' not in cmd:
-            print(cmd, "is not a valid command!", file=sys.stderr)
-            self._input_label.config(text=cmd + " is not a valid command!")
-            self._input_label.after(error_delay, self._clear_input_label)
-            return
-        old_coord, new_coord = re.split('->', cmd)
+    def _toggle_pause(self):
+        self._pause = not self._pause
+        self._pause_btn.config(text="Pause" if not self._pause else "Unpause")
 
-        old_pos = self.get_tile_pos(old_coord)
-        new_pos = self.get_tile_pos(new_coord)
+        if self._pause:
+            self._pause_time = time.time()
+            self._root.after_cancel(self._timer_job)
+            self._next_turn_btn.config(state=tk.DISABLED)
+        else:
+            self._start_time += time.time() - self._pause_time
+            self.timer()
+            self._next_turn_btn.config(state=tk.NORMAL)
 
-        if not old_pos:
-            print(old_coord, "is not a valid coord!", file=sys.stderr)
-            self._input_label.config(text=old_coord + " is not a valid coord!")
-            self._input_label.after(error_delay, self._clear_input_label)
-            return
-        elif not new_pos:
-            print(new_coord, "is not a valid coord!", file=sys.stderr)
-            self._input_label.config(text=new_coord + " is not a valid coord!")
-            self._input_label.after(error_delay, self._clear_input_label)
-            return
-
-        print(old_pos, new_pos)
-
-        self.move(old_pos, new_pos)
-        self._board.update(self.player1, self.player2)
+    def _on_non_human(self, event):
+        if self._human_player == self._player_turn:
+            self._input_label.config(text="You're {} player".format("Red" if self._human_player == 0 else "Green"))
+        else:
+            self._input_label.config(text="Not your turn!")
+        self._input_label.after(2500, self._clear_input_label)
 
     def _on_process_turn(self, event):
         # a way to figure out where should the piece be correctly placed at
@@ -392,21 +398,34 @@ class Game:
 
         dragged_piece = self._board.get_dragged_piece()
 
-        self.move(dragged_piece[1], (newX, newY))
+        if self.move(dragged_piece[1], (newX, newY)):
+            self._pause_btn.config(state=tk.DISABLED)
+            self._next_turn_btn.config(text="End Turn")
+
+            self._pause = False
+            self._root.after_cancel(self._timer_job)
+            self._board.remove_events()
+
+        self._board.update(self.player1, self.player2)
 
     def timer(self):
         delta = time.time() - self._start_time
         minutes, secs = divmod(round(self.time_limit - delta), 60)
-        self._timer_text.set("{:02d}:{:02d}".format(minutes, secs))
 
-        if delta >= self.time_limit:
-            print("Time ended: next turn.")
-            self.end_turn()
-        elif not self._pause:
-            self._root.after(1000, self.timer)
+        text = ""
+        if minutes < 0:
+            text = "-{:02d}:{:02d}".format(abs(math.ceil((self.time_limit - delta) / 60)), -round(self.time_limit - delta) % 60)
+        else:
+            text = "{:02d}:{:02d}".format(minutes, secs)
+
+        if not self._pause:
+            self._timer_job = self._root.after(1000, self.timer)
+        else:
+            text = "Paused! " + text
+
+        self._timer_text.set(text)
 
     def move(self, old, pos):
-        print(self._board.findLegalMoves(old))
         error_delay = 2500
         # Not that player's turn
         if self._player_turn == 0:
@@ -414,16 +433,16 @@ class Game:
                 print("It's currently Red player's turn!", file=sys.stderr)
                 self._input_label.config(text="It's currently Red player's turn!")
                 self._input_label.after(error_delay, self._clear_input_label)
-                return
+                return False
             elif old not in self.player1:
-                return
+                return False
             elif old == pos:
-                return
+                return False
             elif pos not in self._board.findLegalMoves(old):
                 print("Red Player: Illegal move.", file=sys.stderr)
                 self._input_label.config(text="Red Player:s Illegal move.")
-                self._input_label.after(error_delay, self._clear_input_label)
-                return
+                self._clear_job = self._input_label.after(error_delay, self._clear_input_label)
+                return False
             else:
                 self.player1.remove(old)
                 self.player1.append(pos)
@@ -431,27 +450,29 @@ class Game:
             if old in self.player1:
                 print("It's currently Green player's turn!", file=sys.stderr)
                 self._input_label.config(text="It's currently Green player's turn!")
-                self._input_label.after(error_delay, self._clear_input_label)
-                return
+                self._clear_job = self._input_label.after(error_delay, self._clear_input_label)
+                return False
             elif old not in self.player2:
-                return
+                return False
             elif old == pos:
-                return
+                return False
             elif pos not in self._board.findLegalMoves(old):
                 print("Green Player: Illegal move.", file=sys.stderr)
                 self._input_label.config(text="Green Player: Illegal move.")
-                self._input_label.after(error_delay, self._clear_input_label)
-                return
+                self._clear_job =  self._input_label.after(error_delay, self._clear_input_label)
+                return False
             else:
                 self.player2.remove(old)
                 self.player2.append(pos)
 
-        print("Turn {:d}: Player {} {}->{}".format(self.turn_counter, "Red" if self._player_turn == 0 else "Green", self.get_coord(old), self.get_coord(pos)))
-        self._input_label.config(text="Turn {:d}: Player {} {}->{}".format(self.turn_counter, "Red" if self._player_turn == 0 else "Green", self.get_coord(old), self.get_coord(pos)))
-        self._input_label.after(error_delay, self._clear_input_label)
+        if self._clear_job:
+            self._input_label.after_cancel(self._clear_job)
+
+        print("Ply {:d}: Player {} {}->{}".format(self.ply_counter + 1, "Red" if self._player_turn == 0 else "Green", self.get_coord(old), self.get_coord(pos)))
+        self._input_label.config(text="Ply {:d}: Player {} {}->{}".format(self.ply_counter + 1, "Red" if self._player_turn == 0 else "Green", self.get_coord(old), self.get_coord(pos)))
         print(self.player1)
 
-        self.end_turn()
+        return True
 
     @staticmethod
     def _get_distance(self, other):
@@ -584,42 +605,48 @@ class Game:
         c.move(best)
 
     def end_turn(self):
-        self._board.update(self.player1, self.player2)
-
         if self._player_turn == 0:
             self._player_turn = 1
         elif self._player_turn == 1:
             self._player_turn = 0
 
-        self.turn_counter += 1
+        self.ply_counter += 1
         self._start_time = time.time()
 
         self.update_status("Player {}".format("Red" if self._player_turn == 0 else "Green"))
-
-        if self.winning(self.zone2, self.player1):
-            self._pause = True
-            self._board.remove_events()
-            self._timer_text.set("0:00")
-            self.update_status("{} Player wins! {} Player loses!".format("Red", "Green"))
-        elif self.winning(self.zone1, self.player2):
-            self._pause = True
-            self._board.remove_events()
-            self._timer_text.set("0:00")
-            self.update_status("{} Player wins! {} Player loses!".format("Green", "Red"))
-
-        self._clear_input_label()
-        self._entry.delete(0, tk.END)
-
         self.update_score(self.get_final_score(0), self.get_final_score(1))
 
-        if self._player_turn != self._human_player:
-            self.non_human_player_process_turn()
+        self._clear_input_label()
+
+        if self.winning(self.zone2, self.player1) or self.winning(self.zone1, self.player2):
+            self._pause = True
+            self._board.remove_events()
+            self._pause_btn.config(state=tk.DISABLED)
+            self._next_turn_btn.config(state=tk.DISABLED)
+
+            if self.winning(self.zone2, self.player1):
+                self.update_status("{} Player wins! {} Player loses!".format("Red", "Green"))
+            elif self.winning(self.zone1, self.player2):
+                self.update_status("{} Player wins! {} Player loses!".format("Green", "Green"))
+        else:
+            self._pause_btn.config(state=tk.NORMAL)
+            self._next_turn_btn.config(text="Skip Turn")
+
+            if self._pause:
+                self._pause = False
+                self.timer()
+
+            if self._player_turn != self._human_player:
+                self.non_human_player_process_turn()
+
+                self._board.add_events()
+
 
     def winning(self, zone, player):
         return all(piece in zone for piece in player)
     
     def update_status(self, msg):
-        self._turn_text.set("Turn {:d} - {}".format(self.turn_counter + 1, msg))
+        self._turn_text.set("Turn {:d}, Ply {:d} - {}".format(self.ply_counter // 2 + 1, self.ply_counter + 1, msg))
         
     def update_score(self, player1_score, player2_score):
         self._score_text.set("Red: {:f} - Green: {:f}".format(player1_score, player2_score))
