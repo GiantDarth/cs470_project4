@@ -458,13 +458,13 @@ class Game:
             pieces_in_goal = set(self.player1) & set(self.zone2)
             pieces_outside_goal = set(self.player1) - set(self.zone2)
 
-            return len(pieces_in_goal) + sum(
+            return len(pieces_in_goal) + 1 / sum(
                 Game._get_shortest_distance(piece, self.zone2) for piece in pieces_outside_goal)
         elif player == 1:
             pieces_in_goal = set(self.player2) & set(self.zone1)
             pieces_outside_goal = set(self.player2) - set(self.zone1)
 
-            return len(pieces_in_goal) + sum(
+            return len(pieces_in_goal) + 1 / sum(
                 Game._get_shortest_distance(piece, self.zone1) for piece in pieces_outside_goal)
         else:
             return float("nan")
