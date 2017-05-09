@@ -397,12 +397,12 @@ class Game:
     def timer(self):
         delta = time.time() - self._start_time
         minutes, secs = divmod(round(self.time_limit - delta), 60)
-        self._timer_text.set("{:02d}:{:02d}".format(minutes, secs))
+        if minutes < 0:
+            self._timer_text.set("-{:02d}:{:02d}".format(abs(math.ceil((self.time_limit - delta) / 60)), -round(self.time_limit - delta) % 60))
+        else:
+            self._timer_text.set("{:02d}:{:02d}".format(minutes, secs))
 
-        if delta >= self.time_limit:
-            print("Time ended: next turn.")
-            self.end_turn()
-        elif not self._pause:
+        if not self._pause:
             self._root.after(1000, self.timer)
 
     def move(self, old, pos):
