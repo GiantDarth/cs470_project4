@@ -489,6 +489,7 @@ class Game:
             return float("nan")
 
     def minimax(self, player, board, depth):
+        # Forcefully updates the window, keeps the interface from hanging
         self._root.update()
 
         availableMoves = set()
@@ -548,6 +549,7 @@ class Game:
             return alpha
 
     def alphaBeta(self, board, alpha, beta, player):
+        # Forcefully updates the window, keeps the interface from hanging
         self._root.update()
 
         # this one is really similar to the minimax, so I ll just leave this for now and
