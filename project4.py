@@ -288,6 +288,15 @@ class Game:
         minutes, secs = divmod(self.time_limit, 60)
         self._timer_text.set("{:02d}:{:02d}".format(minutes, secs))
 
+        if self._player_turn != self._human_player:
+            self.non_human_player_process_turn()
+
+    def non_human_player_process_turn(self):
+        old, new = self.minimax(self._player_turn, self._board, 10)
+
+        self.move(old, new)
+        self._board.update(self.player1, self.player2)
+
     def get_coord(self, pos):
         return "{}{}".format(chr(65 + pos[0]), self._size - pos[1])
 
@@ -384,7 +393,6 @@ class Game:
         dragged_piece = self._board.get_dragged_piece()
 
         self.move(dragged_piece[1], (newX, newY))
-        self._board.update(self.player1, self.player2)
 
     def timer(self):
         delta = time.time() - self._start_time
@@ -481,6 +489,9 @@ class Game:
             return float("nan")
 
     def minimax(self, player, board, depth):
+        # Forcefully updates the window, keeps the interface from hanging
+        self._root.update()
+
         availableMoves = set()
         global best_move
 
@@ -538,11 +549,14 @@ class Game:
             return alpha
 
     def alphaBeta(self, board, alpha, beta, player):
+        # Forcefully updates the window, keeps the interface from hanging
+        self._root.update()
+
         # this one is really similar to the minimax, so I ll just leave this for now and
         # figure out the minimax first
         # todo
         opponent = (player%2) + 1
-        if depth == 0
+        if depth == 0:
             return -distance(board, player)
         if player == player:
             for move in all_moves(board, player):
@@ -570,6 +584,8 @@ class Game:
         c.move(best)
 
     def end_turn(self):
+        self._board.update(self.player1, self.player2)
+
         if self._player_turn == 0:
             self._player_turn = 1
         elif self._player_turn == 1:
@@ -595,6 +611,9 @@ class Game:
         self._entry.delete(0, tk.END)
 
         self.update_score(self.get_final_score(0), self.get_final_score(1))
+
+        if self._player_turn != self._human_player:
+            self.non_human_player_process_turn()
 
     def winning(self, zone, player):
         return all(piece in zone for piece in player)
