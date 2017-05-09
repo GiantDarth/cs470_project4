@@ -445,10 +445,13 @@ class Game:
         # needs to figure out a good way to get the score
         # my idea is to measure how close these pieces to the opponent region and
         # this just a simple idea
+        #number of pieces in the winningzone when the game ends
+
         pass
 
     def minimax(self, player, board, depth):
         availableMoves = set()
+        global best_move
 
         # we want to first check if the node is a terminal node
         # if its a terminal node, we want to get the score
@@ -456,7 +459,7 @@ class Game:
         if (depth == 0):
             return self.getScore(board, player)
 
-        # since Green player plays first,,then Red player can be considered as an opponent
+        # since Green player plays first, then Red player can be considered as an opponent
         # we want to minimize the value when opponent(Red player) plays
         # and maximize the value when Green player plays
         if (player == "Red"):
@@ -504,10 +507,42 @@ class Game:
             return alpha
 
 
- #   def alphaBeta(self):
+
+    def alphaBeta(self, board, alpha, beta, player):
         # this one is really similar to the minimax, so I ll just leave this for now and
         # figure out the minimax first
         # todo
+        opponent = (player%2) + 1
+        if depth == 0
+            return -distance(board, player)
+        if player == player:
+            for move in all_moves(board, player):
+                nboard = update_board(board, move)
+                alpha = max(alpha, alphabeta(nboard, depth -1, alpha, beta, opponent))
+                if beta <= alpha:
+                    break
+            return alpha
+        else:
+            for move in all_moves(board, player):
+                nboard = update_board(board, move)
+                beta = min(beta, alphabeta(nboard, depth -1, alpha, beta, opponent))
+                if beta <= alpha:
+                    break
+            return beta
+
+
+        depth = 2
+        best = None
+        best_score = -16777216
+        for depth in range(0, 16777216):
+            for move in all_moves(board, player):
+                score = alphabeta(update_board(board, move), depth, -16777216, 16777216,player)
+            if time.time() >= stoptime:
+                break
+        c.move(best)
+
+
+
 
     def end_turn(self):
         if self._player_turn == 0:
