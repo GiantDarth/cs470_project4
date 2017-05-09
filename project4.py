@@ -441,7 +441,7 @@ class Game:
 
     @staticmethod
     def _get_distance(self, other):
-        return math.sqrt((self[0] - other[0])**2 + (self[1] - other[1]))
+        return math.sqrt((self[0] - other[0])**2 + (self[1] - other[1])**2)
 
     @staticmethod
     def _get_shortest_distance(piece, zone):
