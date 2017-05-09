@@ -272,6 +272,12 @@ class Game:
         self._timer_label = tk.Label(self._status_frame, textvariable=self._timer_text)
         self._timer_label.pack()
 
+        self._score_text = tk.StringVar()
+        self._score_label = tk.Label(self._status_frame, textvariable=self._score_text)
+        self._score_label.pack()
+
+        self.update_score(self.get_final_score(0), self.get_final_score(1))
+
         self._root = root
         self._start_time = time.time()
         self.time_limit = t_limit
@@ -563,11 +569,16 @@ class Game:
         self._clear_input_label()
         self._entry.delete(0, tk.END)
 
+        self.update_score(self.get_final_score(0), self.get_final_score(1))
+
     def winning(self, zone, player):
         return all(piece in zone for piece in player)
     
     def update_status(self, msg):
         self._turn_text.set("Turn {:d} - {}".format(self.turn_counter + 1, msg))
+
+    def update_score(self, player1_score, player2_score):
+        self._score_text.set("Red: {:f} - Green: {:f}".format(player1_score, player2_score))
 
 
 if __name__ == "__main__":
