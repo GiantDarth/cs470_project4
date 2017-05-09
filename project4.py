@@ -564,9 +564,7 @@ class Game:
         self._entry.delete(0, tk.END)
 
     def winning(self, zone, player):
-        if all(piece in zone for piece in player):
-            return True
-        return False
+        return all(piece in zone for piece in player)
     
     def update_status(self, msg):
         self._turn_text.set("Turn {:d} - {}".format(self.turn_counter + 1, msg))
