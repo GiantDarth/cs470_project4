@@ -30,7 +30,7 @@ NEGATIVE_INFINITY = -100000
 NUM_PIECES = {"8": 10, "10": 15, "16": 19}
 
 class Board:
-    def __init__(self, size, zone1, zone2, on_process_turn):
+    def __init__(self, size, zone1, zone2, human_player, on_process_turn, on_non_human):
         self._view = tk.Frame()
         self._view.pack(fill=tk.BOTH, expand=1)
         self._size = size
@@ -39,6 +39,8 @@ class Board:
         self._zone2 = zone2[:]
 
         self._on_process_turn = on_process_turn
+        self._on_non_human = on_non_human
+        self._human_player = human_player
         self._init_view()
 
     def _init_view(self):
@@ -110,9 +112,14 @@ class Board:
                                                                  (x + 1) * TILE_SIZE + OFFSET_X, (y + 1) * TILE_SIZE + OFFSET_Y,
                                                                  outline="#fff", fill=fill, tags=tag)
 
-        self._canvas.tag_bind("piece", "<ButtonPress-1>", self._onPressDown)
-        self._canvas.tag_bind("piece", "<B1-Motion>", self._onMove)
-        self._canvas.tag_bind("piece", "<ButtonRelease-1>", self._on_process_turn)
+        human_tag = "player1" if self._human_player == 0 else "player2"
+        non_human_tag = "player2" if self._human_player == 0 else "player1"
+
+        self._canvas.tag_bind(human_tag, "<ButtonPress-1>", self._onPressDown)
+        self._canvas.tag_bind(human_tag, "<B1-Motion>", self._onMove)
+        self._canvas.tag_bind(human_tag, "<ButtonRelease-1>", self._on_process_turn)
+
+        self._canvas.tag_bind(non_human_tag, "<ButtonPress-1>", self._on_non_human)
 
     def remove_events(self):
         self._canvas.tag_unbind("piece", "<ButtonPress-1>")
@@ -234,9 +241,6 @@ class Game:
         self.zone2 = self._get_zone("NE")
         self.player2 = self.zone2[:]
 
-        self._board = Board(self._size, self.zone1, self.zone2, self._on_process_turn)
-        self._board.update(self.player1, self.player2)
-
         if color == "Red":
             self._human_player = 0
         elif color == "Green":
@@ -244,6 +248,9 @@ class Game:
         else:
             print(sys.stderr, "Invalid human player used for Game")
             sys.exit(1)
+
+        self._board = Board(self._size, self.zone1, self.zone2, self._human_player, self._on_process_turn, self._on_non_human)
+        self._board.update(self.player1, self.player2)
 
         self._player_turn = 1
         self.turn_counter = 0
@@ -384,6 +391,13 @@ class Game:
 
         self.move(old_pos, new_pos)
         self._board.update(self.player1, self.player2)
+
+    def _on_non_human(self, event):
+        if self._human_player == self._player_turn:
+            self._input_label.config(text="You're {} player".format("Red" if self._human_player == 0 else "Green"))
+        else:
+            self._input_label.config(text="Not your turn!")
+        self._input_label.after(2500, self._clear_input_label)
 
     def _on_process_turn(self, event):
         # a way to figure out where should the piece be correctly placed at
