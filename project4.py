@@ -569,30 +569,65 @@ class Game:
 
             return alpha
 
-    def alphaBeta(self, board, alpha, beta, player):
+    def alphaBeta(self, board, ply, alpha, beta, player):
         # Forcefully updates the window, keeps the interface from hanging
         self._root.update()
 
         # this one is really similar to the minimax, so I ll just leave this for now and
         # figure out the minimax first
         # todo
-        opponent = (player%2) + 1
-        if depth == 0:
-            return -distance(board, player)
-        if player == player:
-            for move in all_moves(board, player):
-                nboard = update_board(board, move)
-                alpha = max(alpha, alphabeta(nboard, depth -1, alpha, beta, opponent))
-                if beta <= alpha:
-                    break
+        global best_move
+        ply_depth = 0
+        if player != 'green' : ply_depth = red.ply_depth
+        else: ply_depth = red.ply_depth
+        end = get_final_score(player)
+
+        if ply >= ply_depth or end[0] == 0 or end[1] == 0:
+            score = evalulation_func(board, player)
+            return score
+        moves = findLegalMoves(board, player)
+
+        if player == turn:
+            for i in range(len(moves)):
+                new_board = deepcopy(board)
+                move((moves[i][0], moves[i][1]), (moves[i][2], moves[i][3]), new_board)
+                if player == 'green': player = 'red'
+                else: player = 'green'
+                score = alphaBeta(player, new_board, ply+1, alpha, beta)
+                if score > alpha:
+                    if ply ==0: best_move = (moves[i][0], moves[i][1]), (moves[i][2], moves[i][3])
+                    alpha = score
+                if alpha >= beta:
+                    return alpha
             return alpha
         else:
-            for move in all_moves(board, player):
-                nboard = update_board(board, move)
-                beta = min(beta, alphabeta(nboard, depth -1, alpha, beta, opponent))
-                if beta <= alpha:
-                    break
+            for i in range(len(moves)):
+                new_board = deepcopy(board)
+                move((moves[i][0], moves[i][1]), (moves[i][2], moves[i][3]), new_board)
+                if player == 'green': player = 'red'
+                else: player ='green'
+                score = alphaBeta(player, new_board, ply+1, alpha, beta)
+                if score < beta: beta = score
+                if alpha >= beta: return beta
             return beta
+
+        # opponent = (player%2) + 1
+        # if depth == 0:
+        #     return -distance(board, player)
+        # if player == player:
+        #     for move in all_moves(board, player):
+        #         nboard = update_board(board, move)
+        #         alpha = max(alpha, alphabeta(nboard, depth -1, alpha, beta, opponent))
+        #         if beta <= alpha:
+        #             break
+        #     return alpha
+        # else:
+        #     for move in all_moves(board, player):
+        #         nboard = update_board(board, move)
+        #         beta = min(beta, alphabeta(nboard, depth -1, alpha, beta, opponent))
+        #         if beta <= alpha:
+        #             break
+        #     return beta
 
 
             #This is another alpha beta way
