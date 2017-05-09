@@ -272,6 +272,12 @@ class Game:
         self._timer_label = tk.Label(self._status_frame, textvariable=self._timer_text)
         self._timer_label.pack()
 
+        self._score_text = tk.StringVar()
+        self._score_label = tk.Label(self._status_frame, textvariable=self._score_text)
+        self._score_label.pack()
+
+        self.update_score(self.get_final_score(0), self.get_final_score(1))
+
         self._root = root
         self._start_time = time.time()
         self.time_limit = t_limit
@@ -439,18 +445,38 @@ class Game:
 
         self.end_turn()
 
+    @staticmethod
+    def _get_distance(self, other):
+        return math.sqrt((self[0] - other[0])**2 + (self[1] - other[1])**2)
+
+    @staticmethod
+    def _get_shortest_distance(piece, zone):
+        return min(Game._get_distance(piece, tile) for tile in zone)
+
+    def get_final_score(self, player):
+        if player == 0:
+            pieces_in_goal = set(self.player1) & set(self.zone2)
+            pieces_outside_goal = set(self.player1) - set(self.zone2)
+
+            return len(pieces_in_goal) + 1 / sum(
+                Game._get_shortest_distance(piece, self.zone2) for piece in pieces_outside_goal)
+        elif player == 1:
+            pieces_in_goal = set(self.player2) & set(self.zone1)
+            pieces_outside_goal = set(self.player2) - set(self.zone1)
+
+            return len(pieces_in_goal) + 1 / sum(
+                Game._get_shortest_distance(piece, self.zone1) for piece in pieces_outside_goal)
+        else:
+            return float("nan")
+
     # The "Utility" function
     def evalulation_func(self, board, player):
         # If Red Player
         if player == 0:
-            # Get corner coordinate of Green Player's zone
-            goal_coord = self.zone2[0]
-            return sum(math.sqrt((piece[0] - goal_coord[0])**2 + (piece[1] - goal_coord[1])**2) for piece in self.player1)
+            return sum(Game._get_shortest_distance(piece, self.zone2) for piece in self.player1)
         # If Green Player
         elif player == 1:
-            # Get corner coordinate of Red Player's zone zone
-            goal_coord = self.zone1[0]
-            return sum(math.sqrt((piece[0] - goal_coord[0])**2 + (piece[1] - goal_coord[1])**2) for piece in self.player2)
+            return sum(Game._get_shortest_distance(piece, self.zone1) for piece in self.player2)
         else:
             return float("nan")
 
@@ -543,13 +569,16 @@ class Game:
         self._clear_input_label()
         self._entry.delete(0, tk.END)
 
+        self.update_score(self.get_final_score(0), self.get_final_score(1))
+
     def winning(self, zone, player):
-        if all(piece in zone for piece in player):
-            return True
-        return False
+        return all(piece in zone for piece in player)
     
     def update_status(self, msg):
         self._turn_text.set("Turn {:d} - {}".format(self.turn_counter + 1, msg))
+
+    def update_score(self, player1_score, player2_score):
+        self._score_text.set("Red: {:f} - Green: {:f}".format(player1_score, player2_score))
 
 
 if __name__ == "__main__":
