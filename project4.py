@@ -3,7 +3,8 @@ import sys
 import time
 import argparse
 import re
-import copy
+import math
+from copy import deepcopy
 
 LIGHT_SQUARE_COLOR = '#CCC'
 DARK_SQUARE_COLOR = "#222"
@@ -33,7 +34,6 @@ class Board:
         self._view = tk.Frame()
         self._view.pack(fill=tk.BOTH, expand=1)
         self._size = size
-        self.jump = False
 
         self._zone1 = zone1[:]
         self._zone2 = zone2[:]
@@ -121,8 +121,8 @@ class Board:
 
     def _onPressDown(self, event):
         piece = self._canvas.find_closest(event.x, event.y)
-        while "piece" not in self._canvas.gettags(piece):
-            piece = self._canvas.find_closest(event.x, event.y, start=piece)
+        if "piece" not in self._canvas.gettags(piece):
+            return
 
         oldX = (event.x - OFFSET_X) // TILE_SIZE
         oldY = (event.y - OFFSET_Y) // TILE_SIZE
@@ -170,25 +170,23 @@ class Board:
         if self._is_tile_empty(i, j):
             return legalMoves
 
-        # first, we want to find all jump moves
+        # Find the jumps from the initial position
         current_jumps = set()
         for x in range(i - 1, i + 2):
             for y in range(j - 1, j + 2):
                 current_jumps |= self.findJump((i, j), (x, y))
+        # Find new jumps from last used jump positions, until no more exist.
         last_jumps = current_jumps.copy()
         while last_jumps:
+            # Add last jumps to all possible moves
             legalMoves |= last_jumps
             current_jumps = set()
             for move in last_jumps:
                 for x in range(move[0] - 1, move[0] + 2):
                     for y in range(move[1] - 1, move[1] + 2):
+                        # Add new jumps, but ignore the ones already found.
                         current_jumps |= self.findJump((move[0], move[1]), (x, y)) - legalMoves
             last_jumps = current_jumps.copy()
-
-        if legalMoves:
-            self.jump = True
-        else:
-            self.jump = False
 
         # Find regular moves
         self.findRegularMove((i, j), legalMoves)
@@ -273,6 +271,12 @@ class Game:
         self._timer_text = tk.StringVar()
         self._timer_label = tk.Label(self._status_frame, textvariable=self._timer_text)
         self._timer_label.pack()
+
+        self._score_text = tk.StringVar()
+        self._score_label = tk.Label(self._status_frame, textvariable=self._score_text)
+        self._score_label.pack()
+
+        self.update_score(self.get_final_score(0), self.get_final_score(1))
 
         self._root = root
         self._start_time = time.time()
@@ -441,13 +445,40 @@ class Game:
 
         self.end_turn()
 
-    def getScore(self, board, player):
-        # needs to figure out a good way to get the score
-        # my idea is to measure how close these pieces to the opponent region and
-        # this just a simple idea
-        #number of pieces in the winningzone when the game ends
+    @staticmethod
+    def _get_distance(self, other):
+        return math.sqrt((self[0] - other[0])**2 + (self[1] - other[1])**2)
 
-        pass
+    @staticmethod
+    def _get_shortest_distance(piece, zone):
+        return min(Game._get_distance(piece, tile) for tile in zone)
+
+    def get_final_score(self, player):
+        if player == 0:
+            pieces_in_goal = set(self.player1) & set(self.zone2)
+            pieces_outside_goal = set(self.player1) - set(self.zone2)
+
+            return len(pieces_in_goal) + 1 / sum(
+                Game._get_shortest_distance(piece, self.zone2) for piece in pieces_outside_goal)
+        elif player == 1:
+            pieces_in_goal = set(self.player2) & set(self.zone1)
+            pieces_outside_goal = set(self.player2) - set(self.zone1)
+
+            return len(pieces_in_goal) + 1 / sum(
+                Game._get_shortest_distance(piece, self.zone1) for piece in pieces_outside_goal)
+        else:
+            return float("nan")
+
+    # The "Utility" function
+    def evalulation_func(self, board, player):
+        # If Red Player
+        if player == 0:
+            return sum(Game._get_shortest_distance(piece, self.zone2) for piece in self.player1)
+        # If Green Player
+        elif player == 1:
+            return sum(Game._get_shortest_distance(piece, self.zone1) for piece in self.player2)
+        else:
+            return float("nan")
 
     def minimax(self, player, board, depth):
         availableMoves = set()
@@ -456,13 +487,13 @@ class Game:
         # we want to first check if the node is a terminal node
         # if its a terminal node, we want to get the score
         # if depth is 0, then it's a terminal node
-        if (depth == 0):
-            return self.getScore(board, player)
+        if depth == 0:
+            return self.evalulation_func(board, player)
 
         # since Green player plays first, then Red player can be considered as an opponent
         # we want to minimize the value when opponent(Red player) plays
         # and maximize the value when Green player plays
-        if (player == "Red"):
+        if player == "Red":
             beta = INFINITY
 
             # this part is not right, because we don't want to make change on the real player every time
@@ -485,7 +516,7 @@ class Game:
 
             return beta
 
-        elif (player == "Green"):
+        elif player == "Green":
             alpha = NEGATIVE_INFINITY
 
             # same as above, don't want to use self.player2
@@ -501,12 +532,10 @@ class Game:
                # self.move(oldPosition, newPosition)
 
                 temp = self.minimax("Red", newBoard, depth-1)
-                if (temp < alpha):
+                if temp < alpha:
                     alpha = temp
 
             return alpha
-
-
 
     def alphaBeta(self, board, alpha, beta, player):
         # this one is really similar to the minimax, so I ll just leave this for now and
@@ -530,7 +559,6 @@ class Game:
                     break
             return beta
 
-
         depth = 2
         best = None
         best_score = -16777216
@@ -540,9 +568,6 @@ class Game:
             if time.time() >= stoptime:
                 break
         c.move(best)
-
-
-
 
     def end_turn(self):
         if self._player_turn == 0:
@@ -565,19 +590,20 @@ class Game:
             self._board.remove_events()
             self._timer_text.set("0:00")
             self.update_status("{} Player wins! {} Player loses!".format("Green", "Red"))
-        else:
-            self._root.after(1000, self.timer)
 
         self._clear_input_label()
         self._entry.delete(0, tk.END)
 
+        self.update_score(self.get_final_score(0), self.get_final_score(1))
+
     def winning(self, zone, player):
-        if all(piece in zone for piece in player):
-            return True
-        return False
+        return all(piece in zone for piece in player)
     
     def update_status(self, msg):
         self._turn_text.set("Turn {:d} - {}".format(self.turn_counter + 1, msg))
+        
+    def update_score(self, player1_score, player2_score):
+        self._score_text.set("Red: {:f} - Green: {:f}".format(player1_score, player2_score))
 
     # minimax(n: node): int =
     #     if leaf(n) then return evaluate(n)
@@ -614,7 +640,7 @@ class Game:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Play Halma!")
-    parser.add_argument("--bsize", type=int, help="The board size (8, 10, 16)", choices=[8, 10, 12], dest="size")
+    parser.add_argument("--bsize", type=int, help="The board size (8, 10, 16)", choices=[8, 10, 16], dest="size")
     parser.add_argument("--t-limit", default=20, type=int, help="The time limit (in seconds)", dest="t_limit")
     parser.add_argument("--h-player", default="Green", help="The human player ('Red' or 'Green')", choices=["Red", "Green"], dest="color")
     parser.add_argument("--optional", type=open, help="An optional path to a board", dest="board_fp")
