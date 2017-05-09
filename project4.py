@@ -121,8 +121,8 @@ class Board:
 
     def _onPressDown(self, event):
         piece = self._canvas.find_closest(event.x, event.y)
-        while "piece" not in self._canvas.gettags(piece):
-            piece = self._canvas.find_closest(event.x, event.y, start=piece)
+        if "piece" not in self._canvas.gettags(piece):
+            return
 
         oldX = (event.x - OFFSET_X) // TILE_SIZE
         oldY = (event.y - OFFSET_Y) // TILE_SIZE
@@ -563,8 +563,6 @@ class Game:
             self._board.remove_events()
             self._timer_text.set("0:00")
             self.update_status("{} Player wins! {} Player loses!".format("Green", "Red"))
-        else:
-            self._root.after(1000, self.timer)
 
         self._clear_input_label()
         self._entry.delete(0, tk.END)
