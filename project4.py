@@ -3,6 +3,7 @@ import sys
 import time
 import argparse
 import re
+import math
 from copy import deepcopy
 
 LIGHT_SQUARE_COLOR = '#CCC'
@@ -438,11 +439,20 @@ class Game:
 
         self.end_turn()
 
-    def getScore(self, board, player):
-        # needs to figure out a good way to get the score
-        # my idea is to measure how close these pieces to the opponent region and
-        # this just a simple idea
-        pass
+    # The "Utility" function
+    def evalulation_func(self, board, player):
+        # If Red Player
+        if player == 0:
+            # Get corner coordinate of Green Player's zone
+            goal_coord = self.zone2[0]
+            return sum(math.sqrt((piece[0] - goal_coord[0])**2 + (piece[1] - goal_coord[1])**2) for piece in self.player1)
+        # If Green Player
+        elif player == 1:
+            # Get corner coordinate of Red Player's zone zone
+            goal_coord = self.zone1[0]
+            return sum(math.sqrt((piece[0] - goal_coord[0])**2 + (piece[1] - goal_coord[1])**2) for piece in self.player2)
+        else:
+            return float("nan")
 
     def minimax(self, player, board, depth):
         availableMoves = set()
