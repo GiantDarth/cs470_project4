@@ -439,6 +439,30 @@ class Game:
 
         self.end_turn()
 
+    @staticmethod
+    def _get_distance(self, other):
+        return math.sqrt((self[0] - other[0])**2 + (self[1] - other[1]))
+
+    @staticmethod
+    def _get_shortest_distance(piece, zone):
+        return min(Game._get_distance(piece, tile) for tile in zone)
+
+    def get_final_score(self, player):
+        if player == 0:
+            pieces_in_goal = set(self.player1) & set(self.zone2)
+            pieces_outside_goal = set(self.player1) - pieces_in_goal
+
+            return len(pieces_in_goal) + sum(
+                Game._get_shortest_distance(piece, self.zone2) for piece in pieces_outside_goal)
+        elif player == 1:
+            pieces_in_goal = set(self.player2) & set(self.zone1)
+            pieces_outside_goal = set(self.player1) - pieces_in_goal
+
+            return len(pieces_in_goal) + sum(
+                Game._get_shortest_distance(piece, self.zone1) for piece in pieces_outside_goal)
+        else:
+            return float("nan")
+
     # The "Utility" function
     def evalulation_func(self, board, player):
         # If Red Player
