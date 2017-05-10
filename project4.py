@@ -308,23 +308,24 @@ class Game:
     def non_human_player_process_turn(self):
         self._next_turn_btn.config(state=tk.DISABLED, text="End Turn")
 
-        # old, new = self.minimax(self._player_turn, self._board, 10)
+        player = deepcopy(self.player1)
+        opponent = deepcopy(self.player2)
         if self._strategy == "minimax":
-            player = deepcopy(self.player1)
-            opponent = deepcopy(self.player2)
             self.minimax("Green", player, opponent, self._board, 0)
             old = self._best_move[0]
             new = self._best_move[1]
 
         elif self._strategy == "alpha-beta":
-            #self.alphaBeta()
+            self.alphaBeta("Green", player, opponent, self._board, 0, NEGATIVE_INFINITY, INFINITY)
             old = self._best_move[0]
             new = self._best_move[1]
 
         self._pause = True
         self._root.after_cancel(self._timer_job)
 
-        self.move(old, new, self._board)
+        self.move(old, new, self._board, self.player1)
+        print(self.player1)
+        print([old, new])
 
         messagebox.showinfo("Non-Human Player Turn Done", "{} -> {}".format(self.get_coord(old), self.get_coord(new)))
         self._next_turn_btn.config(state=tk.NORMAL, text="End Turn")
@@ -411,7 +412,7 @@ class Game:
 
         dragged_piece = self._board.get_dragged_piece()
 
-        if self.move(dragged_piece[1], (newX, newY), self._board):
+        if self.move(dragged_piece[1], (newX, newY), self._board, self.player2):
             self._pause_btn.config(state=tk.DISABLED)
             self._next_turn_btn.config(text="End Turn")
 
@@ -438,16 +439,16 @@ class Game:
 
         self._timer_text.set(text)
 
-    def move(self, old, pos, board):
+    def move(self, old, pos, board, player):
         error_delay = 2500
         # Not that player's turn
         if self._player_turn == 0:
-            if old in self.player2:
+            if old in player:
                 print("It's currently Red player's turn!", file=sys.stderr)
                 self._input_label.config(text="It's currently Red player's turn!")
                 self._input_label.after(error_delay, self._clear_input_label)
                 return False
-            elif old not in self.player1:
+            elif old not in player:
                 return False
             elif old == pos:
                 return False
@@ -457,15 +458,15 @@ class Game:
                 self._clear_job = self._input_label.after(error_delay, self._clear_input_label)
                 return False
             else:
-                self.player1.remove(old)
-                self.player1.append(pos)
+                player.remove(old)
+                player.append(pos)
         elif self._player_turn == 1:
-            if old in self.player1:
+            if old in player:
                 print("It's currently Green player's turn!", file=sys.stderr)
                 self._input_label.config(text="It's currently Green player's turn!")
                 self._clear_job = self._input_label.after(error_delay, self._clear_input_label)
                 return False
-            elif old not in self.player2:
+            elif old not in player:
                 return False
             elif old == pos:
                 return False
@@ -475,8 +476,8 @@ class Game:
                 self._clear_job =  self._input_label.after(error_delay, self._clear_input_label)
                 return False
             else:
-                self.player2.remove(old)
-                self.player2.append(pos)
+                player.remove(old)
+                player.append(pos)
 
         if self._clear_job:
             self._input_label.after_cancel(self._clear_job)
@@ -546,23 +547,21 @@ class Game:
             for position in availableMoves:
                 old_position = position[0]
                 new_positions = position[1]
-                new_board = deepcopy(board)
 
                 # there are a lot of choices for new positions
                 for new_position in new_positions:
-                    self.move(old_position, new_position, new_board)
                     new_opponent = deepcopy(opponent)
+                    self.move(old_position, new_position, board, opponent)
                     new_opponent.remove(old_position)
                     new_opponent.append(new_position)
 
-                    temp = self.minimax("Green", player, new_opponent, new_board, depth+1)
+                    temp = self.minimax("Green", player, new_opponent, board, depth+1)
                     if temp < beta:
                         beta = temp
 
-
             return beta
 
-        elif playerColor == "Green":
+        elif player_color == "Green":
             alpha = NEGATIVE_INFINITY
 
             for piece in player:
@@ -571,15 +570,14 @@ class Game:
             for position in availableMoves:
                 old_position = position[0]
                 new_positions = position[1]
-                new_board = deepcopy(board)
 
                 for new_position in new_positions:
-                    self.move(old_position, new_position, new_board)
                     new_player = deepcopy(player)
+                    self.move(old_position, new_position, board, player)
                     new_player.remove(old_position)
                     new_player.append(new_position)
 
-                    temp = self.minimax("Red", new_player, opponent, new_board, depth+1)
+                    temp = self.minimax("Red", new_player, opponent, board, depth+1)
                     if temp > alpha:
                         alpha = temp
                         if depth == 0:
@@ -587,40 +585,68 @@ class Game:
 
             return alpha
 
-    def alphaBeta(self, board, alpha, beta, player):
+    def alphaBeta(self, player_color, player, opponent, board, depth, alpha, beta):
         # Forcefully updates the window, keeps the interface from hanging
         self._root.update()
 
-        # this one is really similar to the minimax, so I ll just leave this for now and
-        # figure out the minimax first
-        # todo
-        opponent = (player%2) + 1
-        if depth == 0:
-            return -distance(board, player)
-        if player == player:
-            for move in all_moves(board, player):
-                nboard = update_board(board, move)
-                alpha = max(alpha, alphabeta(nboard, depth -1, alpha, beta, opponent))
-                if beta <= alpha:
-                    break
-            return alpha
-        else:
-            for move in all_moves(board, player):
-                nboard = update_board(board, move)
-                beta = min(beta, alphabeta(nboard, depth -1, alpha, beta, opponent))
-                if beta <= alpha:
-                    break
+        availableMoves = []
+
+        # we want to first check if the node is a terminal node
+        # if its a terminal node, we want to get the score
+        if depth == self._depth:
+            return self.evalulation_func(board, player_color)
+
+        # since Green player plays first, then Red player can be considered as an opponent
+        # we want to minimize the value when opponent(Red player) plays
+        # and maximize the value when Green player plays
+        if player_color == "Red":
+            # this part is not right, because we don't want to make change on the real player every time
+            for piece in opponent:
+                availableMoves.append([piece, board.findLegalMoves(piece)])
+
+            for position in availableMoves:
+                old_position = position[0]
+                new_positions = position[1]
+
+                # there are a lot of choices for new positions
+                for new_position in new_positions:
+                    new_opponent = deepcopy(opponent)
+                    self.move(old_position, new_position, board, opponent)
+                    new_opponent.remove(old_position)
+                    new_opponent.append(new_position)
+
+                    temp = self.alphaBeta("Green", player, new_opponent, board, depth+1, alpha, beta)
+                    if temp < beta:
+                        beta = temp
+                    if alpha >= beta:
+                        return beta
+
             return beta
 
-        depth = 2
-        best = None
-        best_score = -16777216
-        for depth in range(0, 16777216):
-            for move in all_moves(board, player):
-                score = alphabeta(update_board(board, move), depth, -16777216, 16777216,player)
-            if time.time() >= stoptime:
-                break
-        c.move(best)
+        elif player_color == "Green":
+            for piece in player:
+                availableMoves.append([piece, board.findLegalMoves(piece)])
+
+            for position in availableMoves:
+                old_position = position[0]
+                new_positions = position[1]
+
+                for new_position in new_positions:
+                    new_player = deepcopy(player)
+                    self.move(old_position, new_position, board, player)
+                    new_player.remove(old_position)
+                    new_player.append(new_position)
+
+                    temp = self.alphaBeta("Red", new_player, opponent, board, depth+1, alpha, beta)
+                    if temp > alpha:
+                        alpha = temp
+                        if depth == 0:
+                            self._best_move = (old_position, new_position)
+
+                    if alpha >= beta:
+                        return alpha
+
+            return alpha
 
     def end_turn(self):
         if self._player_turn == 0:
@@ -680,7 +706,7 @@ if __name__ == "__main__":
 
     root = tk.Tk()
     root.wm_title("Halma {0:d} x {0:d}".format(args.size))
-    game = Game(args.size, args.t_limit, args.color, root, "minimax", 2)
+    game = Game(args.size, args.t_limit, args.color, root, "alpha-beta", 2)
 
     root.resizable(width=False, height=False)
     root.update()
