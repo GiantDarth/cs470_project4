@@ -9,14 +9,17 @@ from copy import deepcopy
 LIGHT_SQUARE_COLOR = '#CCC'
 DARK_SQUARE_COLOR = "#222"
 
-PLAYER_1_COLOR = "#BB578F"
-PLAYER_2_COLOR = "#B2D965"
+RED_COLOR = "#BB578F"
+GREEN_COLOR = "#B2D965"
 
-PLAYER_1_DARK_ZONE = "#D583B1"
-PLAYER_1_LIGHT_ZONE = "#E7AFCF"
+RED_PLAYER_DARK_ZONE = "#D583B1"
+RED_PLAYER_LIGHT_ZONE = "#E7AFCF"
 
-PLAYER_2_DARK_ZONE = "#D2F195"
-PLAYER_2_LIGHT_ZONE = "#E3F7BC"
+GREEN_PLAYER_DARK_ZONE = "#D2F195"
+GREEN_PLAYER_LIGHT_ZONE = "#E3F7BC"
+
+GREEN_PLAYER = 1
+RED_PLAYER = 0
 
 OFFSET_X = 40
 OFFSET_Y = 30
@@ -24,19 +27,16 @@ OFFSET_Y = 30
 TILE_SIZE = 45
 PIECE_SIZE_DIFF = 5
 
-INFINITY = 100000
-NEGATIVE_INFINITY = -100000
-
 NUM_PIECES = {"8": 10, "10": 15, "16": 19}
 
 class Board:
-    def __init__(self, size, zone1, zone2, human_player, on_process_turn, on_non_human):
+    def __init__(self, size, red_player_zone, green_player_zone, human_player, on_process_turn, on_non_human):
         self._view = tk.Frame()
         self._view.pack(fill=tk.BOTH, expand=1)
         self._size = size
 
-        self._zone1 = zone1[:]
-        self._zone2 = zone2[:]
+        self._red_player_zone = red_player_zone[:]
+        self._green_player_zone = green_player_zone[:]
 
         self._on_process_turn = on_process_turn
         self._on_non_human = on_non_human
@@ -51,10 +51,10 @@ class Board:
         self._canvas.pack(expand=1)
 
         self._grid = [[None] * self._size] * self._size
-        self._player1 = []
-        self._player1_pieces = []
-        self._player2 = []
-        self._player2_pieces = []
+        self._red_player = []
+        self._red_player_pieces = []
+        self._green_player = []
+        self._green_player_pieces = []
 
         for x in range(self._size):
             self._canvas.create_text(int((x + 0.5) * TILE_SIZE) + OFFSET_X, OFFSET_Y // 2, text=chr(65 + x), fill="white")
@@ -69,42 +69,42 @@ class Board:
                 fill = tag = ""
                 if x % 2 == 0:
                     if y % 2 == 0:
-                        if (x, y) in self._zone1:
-                            fill = PLAYER_1_LIGHT_ZONE
+                        if (x, y) in self._red_player_zone:
+                            fill = RED_PLAYER_LIGHT_ZONE
                             tag = ("light", "zone1")
-                        elif (x, y) in self._zone2:
-                            fill = PLAYER_2_LIGHT_ZONE
+                        elif (x, y) in self._green_player_zone:
+                            fill = GREEN_PLAYER_LIGHT_ZONE
                             tag = ("light", "zone2")
                         else:
                             fill = LIGHT_SQUARE_COLOR
                             tag = "light"
                     else:
-                        if (x, y) in self._zone1:
-                            fill = PLAYER_1_DARK_ZONE
+                        if (x, y) in self._red_player_zone:
+                            fill = RED_PLAYER_DARK_ZONE
                             tag = ("dark", "zone1")
-                        elif (x, y) in self._zone2:
-                            fill = PLAYER_2_DARK_ZONE
+                        elif (x, y) in self._green_player_zone:
+                            fill = GREEN_PLAYER_DARK_ZONE
                             tag = ("dark", "zone2")
                         else:
                             fill = DARK_SQUARE_COLOR
                             tag = "dark"
                 else:
                     if y % 2 == 0:
-                        if (x, y) in self._zone1:
-                            fill = PLAYER_1_DARK_ZONE
+                        if (x, y) in self._red_player_zone:
+                            fill = RED_PLAYER_DARK_ZONE
                             tag = ("dark", "zone1")
-                        elif (x, y) in self._zone2:
-                            fill = PLAYER_2_DARK_ZONE
+                        elif (x, y) in self._green_player_zone:
+                            fill = GREEN_PLAYER_DARK_ZONE
                             tag = ("dark", "zone2")
                         else:
                             fill = DARK_SQUARE_COLOR
                             tag = "dark"
                     else:
-                        if (x, y) in self._zone1:
-                            fill = PLAYER_1_LIGHT_ZONE
+                        if (x, y) in self._red_player_zone:
+                            fill = RED_PLAYER_LIGHT_ZONE
                             tag = ("light", "zone1")
-                        elif (x, y) in self._zone2:
-                            fill = PLAYER_2_LIGHT_ZONE
+                        elif (x, y) in self._green_player_zone:
+                            fill = GREEN_PLAYER_LIGHT_ZONE
                             tag = ("light", "zone2")
                         else:
                             fill = LIGHT_SQUARE_COLOR
@@ -114,8 +114,8 @@ class Board:
                                                                  outline="#fff", fill=fill, tags=tag)
 
     def add_events(self):
-        human_tag = "player1" if self._human_player == 0 else "player2"
-        non_human_tag = "player2" if self._human_player == 0 else "player1"
+        human_tag = "player1" if self._human_player == RED_PLAYER else "player2"
+        non_human_tag = "player2" if self._human_player == RED_PLAYER else "player1"
 
         self._canvas.tag_bind(human_tag, "<ButtonPress-1>", self._onPressDown)
         self._canvas.tag_bind(human_tag, "<B1-Motion>", self._onMove)
@@ -145,31 +145,31 @@ class Board:
         self._canvas.move(self._dragged_piece[0], delta[0], delta[1])
         self._current_drag_pos = (event.x, event.y)
 
-    def update(self, player1, player2):
-        self._player1 = player1[:]
-        self._player2 = player2[:]
+    def update(self, red_player, green_player):
+        self._red_player = red_player[:]
+        self._green_player = green_player[:]
 
-        for piece in self._player1_pieces:
+        for piece in self._red_player_pieces:
             self._canvas.delete(piece)
-        for piece in self._player2_pieces:
+        for piece in self._green_player_pieces:
             self._canvas.delete(piece)
 
-        self._player1_pieces = [self._canvas.create_oval(x * TILE_SIZE + OFFSET_X + PIECE_SIZE_DIFF,
-                                                         y * TILE_SIZE + OFFSET_Y + PIECE_SIZE_DIFF,
-                                                         (x + 1) * TILE_SIZE + OFFSET_X - PIECE_SIZE_DIFF,
-                                                         (y + 1) * TILE_SIZE + OFFSET_Y - PIECE_SIZE_DIFF,
-                                                         fill=PLAYER_1_COLOR, tag=("piece", "player1")) for (x, y) in player1]
-        self._player2_pieces = [self._canvas.create_oval(x * TILE_SIZE + OFFSET_X + PIECE_SIZE_DIFF,
-                                                         y * TILE_SIZE + OFFSET_Y + PIECE_SIZE_DIFF,
-                                                         (x + 1) * TILE_SIZE + OFFSET_X - PIECE_SIZE_DIFF,
-                                                         (y + 1) * TILE_SIZE + OFFSET_Y - PIECE_SIZE_DIFF,
-                                                         fill=PLAYER_2_COLOR, tag=("piece", "player2")) for (x, y) in player2]
+        self._red_player_pieces = [self._canvas.create_oval(x * TILE_SIZE + OFFSET_X + PIECE_SIZE_DIFF,
+                                                            y * TILE_SIZE + OFFSET_Y + PIECE_SIZE_DIFF,
+                                                            (x + 1) * TILE_SIZE + OFFSET_X - PIECE_SIZE_DIFF,
+                                                            (y + 1) * TILE_SIZE + OFFSET_Y - PIECE_SIZE_DIFF,
+                                                            fill=RED_COLOR, tag=("piece", "player1")) for (x, y) in red_player]
+        self._green_player_pieces = [self._canvas.create_oval(x * TILE_SIZE + OFFSET_X + PIECE_SIZE_DIFF,
+                                                              y * TILE_SIZE + OFFSET_Y + PIECE_SIZE_DIFF,
+                                                              (x + 1) * TILE_SIZE + OFFSET_X - PIECE_SIZE_DIFF,
+                                                              (y + 1) * TILE_SIZE + OFFSET_Y - PIECE_SIZE_DIFF,
+                                                              fill=GREEN_COLOR, tag=("piece", "player2")) for (x, y) in green_player]
 
     def get_dragged_piece(self):
         return self._dragged_piece
 
     def _is_tile_empty(self, x, y):
-        return (x, y) not in self._player1 and (x, y) not in self._player2
+        return (x, y) not in self._red_player and (x, y) not in self._green_player
 
     def findLegalMoves(self, piece):
         legalMoves = set()
@@ -237,25 +237,27 @@ class Game:
         self._status_frame = tk.Frame()
         self._status_frame.pack()
 
-        self.zone1 = self._get_zone("SW")
-        self.player1 = self.zone1[:]
+        self.red_player_zone = self._get_zone("SW")
+        self.red_player = self.red_player_zone[:]
 
         # Add player starting positions
-        self.zone2 = self._get_zone("NE")
-        self.player2 = self.zone2[:]
+        self.green_player_zone = self._get_zone("NE")
+        self.green_player = self.green_player_zone[:]
 
         if color == "Red":
-            self._human_player = 0
+            self._human_player = RED_PLAYER
+            self._non_human_player = GREEN_PLAYER
         elif color == "Green":
-            self._human_player = 1
+            self._human_player = GREEN_PLAYER
+            self._non_human_player = RED_PLAYER
         else:
             print(sys.stderr, "Invalid human player used for Game")
             sys.exit(1)
 
-        self._board = Board(self._size, self.zone1, self.zone2, self._human_player, self._on_process_turn, self._on_non_human)
-        self._board.update(self.player1, self.player2)
+        self._board = Board(self._size, self.red_player_zone, self.green_player_zone, self._human_player, self._on_process_turn, self._on_non_human)
+        self._board.update(self.red_player, self.green_player)
 
-        self._player_turn = 1
+        self._player_turn = GREEN_PLAYER
         self.ply_counter = 0
 
         self._button_frame = tk.Frame()
@@ -274,7 +276,7 @@ class Game:
         self._turn_label = tk.Label(self._status_frame, textvariable=self._turn_text)
         self._turn_label.pack()
 
-        self.update_status("Player {}".format("Red" if self._player_turn == 0 else "Green"))
+        self.update_status("Player {}".format("Red" if self._player_turn == RED_PLAYER else "Green"))
 
         self._timer_text = tk.StringVar()
         self._timer_label = tk.Label(self._status_frame, textvariable=self._timer_text)
@@ -304,31 +306,36 @@ class Game:
         if self._player_turn != self._human_player:
             self.non_human_player_process_turn()
 
-
     def non_human_player_process_turn(self):
         self._next_turn_btn.config(state=tk.DISABLED, text="End Turn")
 
-        player = deepcopy(self.player1)
-        opponent = deepcopy(self.player2)
-        if self._strategy == "minimax":
-            self.minimax("Green", player, opponent, self._board, 0)
-            old = self._best_move[0]
-            new = self._best_move[1]
+        human_pieces = self.red_player if self._human_player == RED_PLAYER else self.green_player
+        non_human_pieces = self.red_player if self._non_human_player == RED_PLAYER else self.green_player
 
-        elif self._strategy == "alpha-beta":
-            self.alphaBeta("Green", player, opponent, self._board, 0, NEGATIVE_INFINITY, INFINITY)
+        if self._strategy == "minimax":
+            self.minimax(True, human_pieces, non_human_pieces, 0)
             old = self._best_move[0]
             new = self._best_move[1]
+        elif self._strategy == "alpha-beta":
+            self.alphaBeta(True, human_pieces, non_human_pieces, 0, float("-inf"), float("inf"))
+            old = self._best_move[0]
+            new = self._best_move[1]
+        else:
+            return
 
         self._pause = True
         self._root.after_cancel(self._timer_job)
 
-        self.move(old, new, self._board, self.player1)
-        print(self.player1)
+        self.move(old, new)
         print([old, new])
 
         messagebox.showinfo("Non-Human Player Turn Done", "{} -> {}".format(self.get_coord(old), self.get_coord(new)))
         self._next_turn_btn.config(state=tk.NORMAL, text="End Turn")
+
+        new_red_pieces = human_pieces if self._human_player == RED_PLAYER else non_human_pieces
+        new_green_pieces = human_pieces if self._human_player == GREEN_PLAYER else non_human_pieces
+
+        self._board.update(new_red_pieces, new_green_pieces)
 
     def get_coord(self, pos):
         return "{}{}".format(chr(65 + pos[0]), self._size - pos[1])
@@ -400,7 +407,7 @@ class Game:
 
     def _on_non_human(self, event):
         if self._human_player == self._player_turn:
-            self._input_label.config(text="You're {} player".format("Red" if self._human_player == 0 else "Green"))
+            self._input_label.config(text="You're {} player".format("Red" if self._human_player == RED_PLAYER else "Green"))
         else:
             self._input_label.config(text="Not your turn!")
         self._input_label.after(2500, self._clear_input_label)
@@ -412,15 +419,13 @@ class Game:
 
         dragged_piece = self._board.get_dragged_piece()
 
-        if self.move(dragged_piece[1], (newX, newY), self._board, self.player2):
+        if self.move(dragged_piece[1], (newX, newY)):
             self._pause_btn.config(state=tk.DISABLED)
             self._next_turn_btn.config(text="End Turn")
 
-            self._pause = False
-            self._root.after_cancel(self._timer_job)
             self._board.remove_events()
 
-        self._board.update(self.player1, self.player2)
+        self._board.update(self.red_player, self.green_player)
 
     def timer(self):
         delta = time.time() - self._start_time
@@ -439,52 +444,51 @@ class Game:
 
         self._timer_text.set(text)
 
-    def move(self, old, pos, board, player):
+    def move(self, old, pos):
         error_delay = 2500
-        # Not that player's turn
-        if self._player_turn == 0:
-            if old in player:
+        if self._player_turn == RED_PLAYER:
+            if old in self.green_player:
                 print("It's currently Red player's turn!", file=sys.stderr)
                 self._input_label.config(text="It's currently Red player's turn!")
                 self._input_label.after(error_delay, self._clear_input_label)
                 return False
-            elif old not in player:
+            elif old not in self.red_player:
                 return False
             elif old == pos:
                 return False
-            elif pos not in board.findLegalMoves(old):
+            elif pos not in self._board.findLegalMoves(old):
                 print("Red Player: Illegal move.", file=sys.stderr)
                 self._input_label.config(text="Red Player:s Illegal move.")
                 self._clear_job = self._input_label.after(error_delay, self._clear_input_label)
                 return False
             else:
-                player.remove(old)
-                player.append(pos)
-        elif self._player_turn == 1:
-            if old in player:
+                self.red_player.remove(old)
+                self.red_player.append(pos)
+        elif self._player_turn == GREEN_PLAYER:
+            if old in self.red_player:
                 print("It's currently Green player's turn!", file=sys.stderr)
                 self._input_label.config(text="It's currently Green player's turn!")
                 self._clear_job = self._input_label.after(error_delay, self._clear_input_label)
                 return False
-            elif old not in player:
+            elif old not in self.green_player:
                 return False
             elif old == pos:
                 return False
-            elif pos not in board.findLegalMoves(old):
+            elif pos not in self._board.findLegalMoves(old):
                 print("Green Player: Illegal move.", file=sys.stderr)
                 self._input_label.config(text="Green Player: Illegal move.")
                 self._clear_job =  self._input_label.after(error_delay, self._clear_input_label)
                 return False
             else:
-                player.remove(old)
-                player.append(pos)
+                self.green_player.remove(old)
+                self.green_player.append(pos)
 
         if self._clear_job:
             self._input_label.after_cancel(self._clear_job)
 
-        print("Ply {:d}: Player {} {}->{}".format(self.ply_counter + 1, "Red" if self._player_turn == 0 else "Green", self.get_coord(old), self.get_coord(pos)))
-        self._input_label.config(text="Ply {:d}: Player {} {}->{}".format(self.ply_counter + 1, "Red" if self._player_turn == 0 else "Green", self.get_coord(old), self.get_coord(pos)))
-        print(self.player1)
+        print("Ply {:d}: Player {} {}->{}".format(self.ply_counter + 1, "Red" if self._player_turn == RED_PLAYER else "Green", self.get_coord(old), self.get_coord(pos)))
+        self._input_label.config(text="Ply {:d}: Player {} {}->{}".format(self.ply_counter + 1, "Red" if self._player_turn == RED_PLAYER else "Green", self.get_coord(old), self.get_coord(pos)))
+        print(self.red_player)
 
         return True
 
@@ -497,33 +501,33 @@ class Game:
         return min(Game._get_distance(piece, tile) for tile in zone)
 
     def get_final_score(self, player):
-        if player == 0:
-            pieces_in_goal = set(self.player1) & set(self.zone2)
-            pieces_outside_goal = set(self.player1) - set(self.zone2)
+        if player == RED_PLAYER:
+            pieces_in_goal = set(self.red_player) & set(self.green_player_zone)
+            pieces_outside_goal = set(self.red_player) - set(self.green_player_zone)
 
             return len(pieces_in_goal) + 1 / sum(
-                Game._get_shortest_distance(piece, self.zone2) for piece in pieces_outside_goal)
-        elif player == 1:
-            pieces_in_goal = set(self.player2) & set(self.zone1)
-            pieces_outside_goal = set(self.player2) - set(self.zone1)
+                Game._get_shortest_distance(piece, self.green_player_zone) for piece in pieces_outside_goal)
+        elif player == GREEN_PLAYER:
+            pieces_in_goal = set(self.green_player) & set(self.red_player_zone)
+            pieces_outside_goal = set(self.green_player) - set(self.red_player_zone)
 
             return len(pieces_in_goal) + 1 / sum(
-                Game._get_shortest_distance(piece, self.zone1) for piece in pieces_outside_goal)
+                Game._get_shortest_distance(piece, self.red_player_zone) for piece in pieces_outside_goal)
         else:
             return float("nan")
 
     # The "Utility" function
-    def evalulation_func(self, board, player):
+    def evalulation_func(self, player, pieces):
         # If Red Player
-        if player == "Red":
-            return sum(Game._get_shortest_distance(piece, self.zone2) for piece in self.player1)
+        if player == RED_PLAYER:
+            return sum(Game._get_shortest_distance(piece, self.red_player_zone) for piece in pieces)
         # If Green Player
-        elif player == "Green":
-            return sum(Game._get_shortest_distance(piece, self.zone1) for piece in self.player2)
+        elif player == GREEN_PLAYER:
+            return sum(Game._get_shortest_distance(piece, self.green_player_zone) for piece in pieces)
         else:
             return float("nan")
 
-    def minimax(self, player_color, player, opponent, board, depth):
+    def minimax(self, max_player, human_pieces, non_human_pieces, depth):
         # Forcefully updates the window, keeps the interface from hanging
         self._root.update()
 
@@ -532,60 +536,61 @@ class Game:
         # we want to first check if the node is a terminal node
         # if its a terminal node, we want to get the score
         if depth == self._depth:
-            return self.evalulation_func(board, player_color)
+            player = self._non_human_player if max_player else self._human_player
+            pieces = non_human_pieces if max_player else human_pieces
 
-        # since Green player plays first, then Red player can be considered as an opponent
-        # we want to minimize the value when opponent(Red player) plays
-        # and maximize the value when Green player plays
-        if player_color == "Red":
-            beta = INFINITY
+            return self.evalulation_func(player, pieces)
+
+        if max_player:
+            best_value = float("-inf")
 
             # this part is not right, because we don't want to make change on the real player every time
-            for piece in opponent:
-                availableMoves.append([piece, board.findLegalMoves(piece)])
+            for piece in non_human_pieces:
+                availableMoves.append((piece, self._board.findLegalMoves(piece)))
 
-            for position in availableMoves:
-                old_position = position[0]
-                new_positions = position[1]
+            for move in availableMoves:
+                old_position = move[0]
+                new_positions = move[1]
 
                 # there are a lot of choices for new positions
-                for new_position in new_positions:
-                    new_opponent = deepcopy(opponent)
-                    self.move(old_position, new_position, board, opponent)
-                    new_opponent.remove(old_position)
-                    new_opponent.append(new_position)
+                for pos in new_positions:
+                    new_pieces = non_human_pieces[:]
+                    new_pieces.remove(old_position)
+                    new_pieces.append(pos)
 
-                    temp = self.minimax("Green", player, new_opponent, board, depth+1)
-                    if temp < beta:
-                        beta = temp
-
-            return beta
-
-        elif player_color == "Green":
-            alpha = NEGATIVE_INFINITY
-
-            for piece in player:
-                availableMoves.append([piece, board.findLegalMoves(piece)])
-
-            for position in availableMoves:
-                old_position = position[0]
-                new_positions = position[1]
-
-                for new_position in new_positions:
-                    new_player = deepcopy(player)
-                    self.move(old_position, new_position, board, player)
-                    new_player.remove(old_position)
-                    new_player.append(new_position)
-
-                    temp = self.minimax("Red", new_player, opponent, board, depth+1)
-                    if temp > alpha:
-                        alpha = temp
+                    temp = self.minimax(not max_player, human_pieces, new_pieces, depth + 1)
+                    if temp > best_value:
+                        best_value = temp
                         if depth == 0:
-                            self._best_move = (old_position, new_position)
+                            self._best_move = old_position, pos
 
-            return alpha
+            return best_value
+        else:
+            best_value = float("inf")
 
-    def alphaBeta(self, player_color, player, opponent, board, depth, alpha, beta):
+            # this part is not right, because we don't want to make change on the real player every time
+            for piece in human_pieces:
+                availableMoves.append((piece, self._board.findLegalMoves(piece)))
+
+            for move in availableMoves:
+                old_position = move[0]
+                new_positions = move[1]
+
+                # there are a lot of choices for new positions
+                for pos in new_positions:
+                    new_pieces = human_pieces[:]
+                    new_pieces.remove(old_position)
+                    new_pieces.append(pos)
+
+                    temp = self.minimax(not max_player, new_pieces, non_human_pieces, depth + 1)
+                    if temp < best_value:
+                        best_value = temp
+                        if depth == 0:
+                            self._best_move = old_position, pos
+
+            return best_value
+
+    def alphaBeta(self, max_player, human_pieces, non_human_pieces, depth, alpha, beta):
         # Forcefully updates the window, keeps the interface from hanging
         self._root.update()
 
@@ -594,83 +599,85 @@ class Game:
         # we want to first check if the node is a terminal node
         # if its a terminal node, we want to get the score
         if depth == self._depth:
-            return self.evalulation_func(board, player_color)
+            player = self._non_human_player if max_player else self._human_player
+            pieces = non_human_pieces if max_player else human_pieces
 
-        # since Green player plays first, then Red player can be considered as an opponent
-        # we want to minimize the value when opponent(Red player) plays
-        # and maximize the value when Green player plays
-        if player_color == "Red":
+            return self.evalulation_func(player, pieces)
+
+        if max_player:
             # this part is not right, because we don't want to make change on the real player every time
-            for piece in opponent:
-                availableMoves.append([piece, board.findLegalMoves(piece)])
+            for piece in non_human_pieces:
+                availableMoves.append((piece, self._board.findLegalMoves(piece)))
 
-            for position in availableMoves:
-                old_position = position[0]
-                new_positions = position[1]
+            for move in availableMoves:
+                old_position = move[0]
+                new_positions = move[1]
 
                 # there are a lot of choices for new positions
-                for new_position in new_positions:
-                    new_opponent = deepcopy(opponent)
-                    self.move(old_position, new_position, board, opponent)
-                    new_opponent.remove(old_position)
-                    new_opponent.append(new_position)
+                for pos in new_positions:
+                    new_pieces = non_human_pieces[:]
+                    new_pieces.remove(old_position)
+                    new_pieces.append(pos)
 
-                    temp = self.alphaBeta("Green", player, new_opponent, board, depth+1, alpha, beta)
-                    if temp < beta:
-                        beta = temp
-                    if alpha >= beta:
-                        return beta
-
-            return beta
-
-        elif player_color == "Green":
-            for piece in player:
-                availableMoves.append([piece, board.findLegalMoves(piece)])
-
-            for position in availableMoves:
-                old_position = position[0]
-                new_positions = position[1]
-
-                for new_position in new_positions:
-                    new_player = deepcopy(player)
-                    self.move(old_position, new_position, board, player)
-                    new_player.remove(old_position)
-                    new_player.append(new_position)
-
-                    temp = self.alphaBeta("Red", new_player, opponent, board, depth+1, alpha, beta)
+                    temp = self.alphaBeta(not max_player, human_pieces, new_pieces, depth + 1, alpha, beta)
                     if temp > alpha:
                         alpha = temp
                         if depth == 0:
-                            self._best_move = (old_position, new_position)
+                            self._best_move = old_position, pos
 
                     if alpha >= beta:
                         return alpha
 
             return alpha
+        else:
+            # this part is not right, because we don't want to make change on the real player every time
+            for piece in human_pieces:
+                availableMoves.append((piece, self._board.findLegalMoves(piece)))
+
+            for move in availableMoves:
+                old_position = move[0]
+                new_positions = move[1]
+
+                # there are a lot of choices for new positions
+                for pos in new_positions:
+                    new_pieces = human_pieces[:]
+                    new_pieces.remove(old_position)
+                    new_pieces.append(pos)
+
+                    temp = self.alphaBeta(not max_player, new_pieces, non_human_pieces, depth + 1, alpha, beta)
+                    if temp < beta:
+                        beta = temp
+                        if depth == 0:
+                            self._best_move = old_position, pos
+
+                    if alpha >= beta:
+                        return beta
+
+            return beta
 
     def end_turn(self):
-        if self._player_turn == 0:
-            self._player_turn = 1
-        elif self._player_turn == 1:
-            self._player_turn = 0
+        if self._player_turn == RED_PLAYER:
+            self._player_turn = GREEN_PLAYER
+        elif self._player_turn == GREEN_PLAYER:
+            self._player_turn = RED_PLAYER
 
         self.ply_counter += 1
         self._start_time = time.time()
 
-        self.update_status("Player {}".format("Red" if self._player_turn == 0 else "Green"))
+        self.update_status("Player {}".format("Red" if self._player_turn == RED_PLAYER else "Green"))
         self.update_score(self.get_final_score(0), self.get_final_score(1))
 
         self._clear_input_label()
 
-        if self.winning(self.zone2, self.player1) or self.winning(self.zone1, self.player2):
+        if self.winning(self.green_player_zone, self.red_player) or self.winning(self.red_player_zone, self.green_player):
             self._pause = True
             self._board.remove_events()
             self._pause_btn.config(state=tk.DISABLED)
             self._next_turn_btn.config(state=tk.DISABLED)
 
-            if self.winning(self.zone2, self.player1):
+            if self.winning(self.green_player_zone, self.red_player):
                 self.update_status("{} Player wins! {} Player loses!".format("Red", "Green"))
-            elif self.winning(self.zone1, self.player2):
+            elif self.winning(self.red_player_zone, self.green_player):
                 self.update_status("{} Player wins! {} Player loses!".format("Green", "Green"))
         else:
             self._pause_btn.config(state=tk.NORMAL)
@@ -692,8 +699,8 @@ class Game:
     def update_status(self, msg):
         self._turn_text.set("Turn {:d}, Ply {:d} - {}".format(self.ply_counter // 2 + 1, self.ply_counter + 1, msg))
         
-    def update_score(self, player1_score, player2_score):
-        self._score_text.set("Red: {:f} - Green: {:f}".format(player1_score, player2_score))
+    def update_score(self, red_player_score, green_player_score):
+        self._score_text.set("Red: {:f} - Green: {:f}".format(red_player_score, green_player_score))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Play Halma!")
@@ -706,7 +713,7 @@ if __name__ == "__main__":
 
     root = tk.Tk()
     root.wm_title("Halma {0:d} x {0:d}".format(args.size))
-    game = Game(args.size, args.t_limit, args.color, root, "alpha-beta", 2)
+    game = Game(args.size, args.t_limit, args.color, root, "alpha-beta", 3)
 
     root.resizable(width=False, height=False)
     root.update()
